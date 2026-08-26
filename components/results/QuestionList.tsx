@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Question, Grade, Mapping, UnmatchedAnswer, AnswerBlock } from '@/lib/types';
+import { Question, Grade, Mapping, UnmatchedAnswer, AnswerBlock, OverallSummary } from '@/lib/types';
 import { QuestionListItem } from './QuestionListItem';
 import { UnmatchedAnswersPanel } from './UnmatchedAnswersPanel';
+import { GradingSummaryPanel } from './GradingSummaryPanel';
 
 export interface QuestionListProps {
   questions: Question[];
@@ -11,6 +12,7 @@ export interface QuestionListProps {
   onSelectUnmatched?: (answerBlockId: string) => void;
   mappings?: Mapping[];
   grades?: Grade[];
+  overallSummary?: OverallSummary | null;
   unmatchedAnswers?: UnmatchedAnswer[];
   answerBlocks?: AnswerBlock[];
 }
@@ -23,6 +25,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   onSelectUnmatched,
   mappings = [],
   grades = [],
+  overallSummary = null,
   unmatchedAnswers = [],
   answerBlocks = [],
 }) => {
@@ -62,7 +65,17 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-slate-border">
-      {/* Panel Header */}
+      {/* Optional Top Grading Summary Header */}
+      {overallSummary && (
+        <GradingSummaryPanel
+          overallSummary={overallSummary}
+          grades={grades}
+          mappings={mappings}
+          onExpandAllFeedback={handleToggleExpandAll}
+        />
+      )}
+
+      {/* Questions Section Header */}
       <div className="p-4 sm:p-5 border-b border-slate-border flex items-center justify-between bg-white sticky top-0 z-10">
         <div>
           <h2 className="text-sm sm:text-base font-bold text-slate-text-primary">

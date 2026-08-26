@@ -401,7 +401,7 @@ export default function Home() {
         {viewState === 'results' && (
           <main className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
             {/* Left Panel: Question List (~410px wide) */}
-            <div className="w-full md:w-[410px] h-full flex-shrink-0 flex flex-col border-r border-slate-border">
+            <div className="w-full md:w-[420px] h-full flex-shrink-0 flex flex-col border-r border-slate-border">
               <QuestionList
                 questions={questions}
                 selectedQuestionId={selectedQuestionId}
@@ -410,6 +410,7 @@ export default function Home() {
                 onSelectUnmatched={handleSelectUnmatched}
                 mappings={mappings}
                 grades={grades}
+                overallSummary={overallSummary}
                 unmatchedAnswers={unmatchedAnswers}
                 answerBlocks={answerBlocks}
               />
