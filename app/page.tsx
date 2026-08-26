@@ -8,16 +8,20 @@ import { ProcessingStepper, PipelineStage } from '@/components/upload/Processing
 import { QuestionList } from '@/components/results/QuestionList';
 import { AnswerSheetViewer } from '@/components/results/AnswerSheetViewer';
 import { HighlightOverlay } from '@/components/results/HighlightOverlay';
-import { ArrowRight, Sparkles, AlertCircle, Layers } from 'lucide-react';
+import { ArrowRight, Sparkles, AlertCircle, Layers, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { rasterizeDocument, RasterizedPage } from '@/lib/pdfToImages';
 import { Question, AnswerBlock, Mapping, UnmatchedAnswer, Grade, OverallSummary } from '@/lib/types';
+import { clsx } from 'clsx';
 
 export type AppViewState = 'upload' | 'processing' | 'results';
+export type MobileTab = 'questions' | 'answers';
 
 export default function Home() {
   const [viewState, setViewState] = useState<AppViewState>('upload');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>('questions');
 
   // File Upload State
   const [questionPaper, setQuestionPaper] = useState<UploadedFileData | null>(null);
@@ -91,6 +95,9 @@ export default function Home() {
     setSelectedQuestionId(q.id);
     setSelectedUnmatchedId(null);
 
+    // On mobile, auto-switch to Answer Sheet tab
+    setMobileTab('answers');
+
     const mapping = mappingMap.get(q.id);
     if (mapping && mapping.answerBlockIds.length > 0) {
       for (const blockId of mapping.answerBlockIds) {
@@ -106,6 +113,7 @@ export default function Home() {
   const handleSelectUnmatched = (blockId: string) => {
     setSelectedUnmatchedId(blockId);
     setSelectedQuestionId(null);
+    setMobileTab('answers');
 
     const block = answerBlockMap.get(blockId);
     if (block && block.bbox.length > 0) {
@@ -202,7 +210,6 @@ export default function Home() {
       setGrades(gradeData.grades);
       setOverallSummary(gradeData.overallSummary);
 
-      // Default select first question
       if (qpData.questions.length > 0) {
         setSelectedQuestionId(qpData.questions[0].id);
         const firstMap = mapData.mappings.find((m) => m.questionId === qpData.questions[0].id);
@@ -228,11 +235,9 @@ export default function Home() {
     setProcessingError(null);
   };
 
-  // Render Highlight Overlays for a given page
   const renderOverlayForPage = (pageNumber: number) => {
     const overlays: React.ReactNode[] = [];
 
-    // 1. If an unmatched answer is selected
     if (selectedUnmatchedId) {
       const unmatchedBlock = answerBlockMap.get(selectedUnmatchedId);
       if (unmatchedBlock) {
@@ -253,7 +258,6 @@ export default function Home() {
       return overlays;
     }
 
-    // 2. Render active highlights for the currently selected question
     if (selectedQuestion) {
       selectedAnswerBlocks.forEach((block) => {
         block.bbox.forEach((box, bIdx) => {
@@ -271,7 +275,6 @@ export default function Home() {
         });
       });
     } else {
-      // 3. If no question is explicitly selected, render all answer blocks subtly
       answerBlocks.forEach((block) => {
         block.bbox.forEach((box, bIdx) => {
           if (box.page === pageNumber) {
@@ -300,12 +303,25 @@ export default function Home() {
 
   return (
     <div className="flex h-screen w-full bg-slate-bg overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        activeSection="Exams"
-      />
+      {/* Sidebar - hidden on mobile screens, collapsible on desktop */}
+      <div className={clsx(
+        'hidden md:block h-full',
+        isMobileSidebarOpen && '!block fixed inset-y-0 left-0 z-50 shadow-2xl md:static md:shadow-none'
+      )}>
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          activeSection="Exams"
+        />
+      </div>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+        />
+      )}
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
@@ -314,11 +330,12 @@ export default function Home() {
           onBack={handleBackToUpload}
           breadcrumbCurrent="Exams"
           teacherName="Mrs. Sharma"
+          onToggleMobileMenu={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
 
         {/* View State: Upload */}
         {viewState === 'upload' && (
-          <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 max-w-5xl mx-auto w-full overflow-y-auto">
+          <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 max-w-5xl mx-auto w-full overflow-y-auto">
             <div className="relative mb-6">
               <div className="w-20 h-20 rounded-full bg-primary-peach/20 p-1 ring-4 ring-primary-peach/30 flex items-center justify-center shadow-md">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-3xl shadow-inner">
@@ -397,65 +414,104 @@ export default function Home() {
           </main>
         )}
 
-        {/* View State: Results Split Pane */}
+        {/* View State: Results */}
         {viewState === 'results' && (
-          <main className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-            {/* Left Panel: Question List (~410px wide) */}
-            <div className="w-full md:w-[420px] h-full flex-shrink-0 flex flex-col border-r border-slate-border">
-              <QuestionList
-                questions={questions}
-                selectedQuestionId={selectedQuestionId}
-                selectedUnmatchedId={selectedUnmatchedId}
-                onSelectQuestion={handleSelectQuestion}
-                onSelectUnmatched={handleSelectUnmatched}
-                mappings={mappings}
-                grades={grades}
-                overallSummary={overallSummary}
-                unmatchedAnswers={unmatchedAnswers}
-                answerBlocks={answerBlocks}
-              />
+          <main className="flex-1 flex flex-col h-full overflow-hidden">
+            {/* Mobile Tab Switcher Bar (visible on mobile only) */}
+            <div className="md:hidden bg-white border-b border-slate-border px-4 py-2 flex items-center justify-center z-20">
+              <div className="bg-slate-100 p-1 rounded-full border border-slate-200 inline-flex items-center gap-1">
+                <button
+                  onClick={() => setMobileTab('questions')}
+                  className={clsx(
+                    'px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5',
+                    mobileTab === 'questions'
+                      ? 'bg-charcoal text-white shadow-xs'
+                      : 'text-slate-text-secondary hover:text-slate-text-primary'
+                  )}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Questions ({questions.length})</span>
+                </button>
+                <button
+                  onClick={() => setMobileTab('answers')}
+                  className={clsx(
+                    'px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5',
+                    mobileTab === 'answers'
+                      ? 'bg-charcoal text-white shadow-xs'
+                      : 'text-slate-text-secondary hover:text-slate-text-primary'
+                  )}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Answer Sheet ({rasterizedPages.length})</span>
+                </button>
+              </div>
             </div>
 
-            {/* Right Panel: Answer Sheet Viewer with Highlights */}
-            <div className="flex-1 h-full flex flex-col min-w-0 relative">
-              {/* Multi-page banner indicator if selected answer spans multiple pages */}
-              {selectedQuestionPages.length > 1 && (
-                <div className="bg-primary-light/90 border-b border-primary/20 px-4 py-2 flex items-center justify-between text-xs text-primary font-semibold z-10 animate-fadeIn">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4" />
+            {/* Split View Container on Desktop / Tabbed View on Mobile */}
+            <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+              {/* Left: Question List */}
+              <div className={clsx(
+                'w-full md:w-[420px] h-full flex-shrink-0 flex flex-col border-r border-slate-border overflow-hidden',
+                mobileTab === 'answers' ? 'hidden md:flex' : 'flex'
+              )}>
+                <QuestionList
+                  questions={questions}
+                  selectedQuestionId={selectedQuestionId}
+                  selectedUnmatchedId={selectedUnmatchedId}
+                  onSelectQuestion={handleSelectQuestion}
+                  onSelectUnmatched={handleSelectUnmatched}
+                  mappings={mappings}
+                  grades={grades}
+                  overallSummary={overallSummary}
+                  unmatchedAnswers={unmatchedAnswers}
+                  answerBlocks={answerBlocks}
+                />
+              </div>
+
+              {/* Right: Answer Sheet Viewer */}
+              <div className={clsx(
+                'flex-1 h-full flex flex-col min-w-0 relative overflow-hidden',
+                mobileTab === 'questions' ? 'hidden md:flex' : 'flex'
+              )}>
+                {/* Multi-page banner indicator */}
+                {selectedQuestionPages.length > 1 && (
+                  <div className="bg-primary-light/90 border-b border-primary/20 px-4 py-2 flex items-center justify-between text-xs text-primary font-semibold z-10 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4" />
+                      <span>
+                        Answer for Q{selectedQuestion?.number} spans {selectedQuestionPages.length} pages (Pages {selectedQuestionPages.join(', ')})
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {selectedQuestionPages.map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => setTargetPage(p)}
+                          className="px-2 py-0.5 rounded bg-white text-primary text-xs font-bold shadow-xs hover:bg-primary hover:text-white transition-colors"
+                        >
+                          Go to Page {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Unanswered banner */}
+                {selectedQuestion && mappingMap.get(selectedQuestion.id)?.status === 'unanswered' && (
+                  <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2 text-xs text-status-error font-medium z-10 animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span>
-                      Answer for Q{selectedQuestion?.number} spans {selectedQuestionPages.length} pages (Pages {selectedQuestionPages.join(', ')})
+                      Question {selectedQuestion.number} was identified as unanswered on the student&apos;s answer sheet.
                     </span>
                   </div>
-                  <div className="flex gap-1.5">
-                    {selectedQuestionPages.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setTargetPage(p)}
-                        className="px-2 py-0.5 rounded bg-white text-primary text-xs font-bold shadow-xs hover:bg-primary hover:text-white transition-colors"
-                      >
-                        Go to Page {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Unanswered banner if selected question is unanswered */}
-              {selectedQuestion && mappingMap.get(selectedQuestion.id)?.status === 'unanswered' && (
-                <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2 text-xs text-status-error font-medium z-10 animate-fadeIn">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>
-                    Question {selectedQuestion.number} was identified as unanswered on the student&apos;s answer sheet.
-                  </span>
-                </div>
-              )}
-
-              <AnswerSheetViewer
-                pages={rasterizedPages}
-                targetPage={targetPage}
-                renderOverlayForPage={renderOverlayForPage}
-              />
+                <AnswerSheetViewer
+                  pages={rasterizedPages}
+                  targetPage={targetPage}
+                  renderOverlayForPage={renderOverlayForPage}
+                />
+              </div>
             </div>
           </main>
         )}
