@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Sparkles, Check, AlertCircle, RefreshCw, Upload } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '@/components/ui/Button';
 
@@ -55,7 +55,6 @@ export const ProcessingStepper: React.FC<ProcessingStepperProps> = ({
 }) => {
   const getStepStatus = (stepId: PipelineStage, index: number) => {
     if (error) {
-      // Find index of current failed stage
       const currentFailedIndex = STEPS.findIndex((s) => s.id === currentStage);
       if (index === currentFailedIndex) return 'failed';
       if (index < currentFailedIndex) return 'completed';
@@ -71,7 +70,7 @@ export const ProcessingStepper: React.FC<ProcessingStepperProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 md:p-16 max-w-xl mx-auto w-full text-center">
+    <div className="flex flex-col items-center justify-center p-8 md:p-16 max-w-xl mx-auto w-full text-center animate-fadeIn">
       {/* Centered 4-point Sparkle Icon (as in Figma) */}
       <div className="relative mb-6">
         <div className={clsx(
@@ -90,20 +89,19 @@ export const ProcessingStepper: React.FC<ProcessingStepperProps> = ({
 
       {/* Main Headline */}
       <h2 className="text-2xl md:text-3xl font-bold text-slate-text-primary tracking-tight">
-        {error ? 'Extraction Error' : 'Extracting…'}
+        {error ? 'Processing Interrupted' : 'Extracting…'}
       </h2>
       <p className="text-sm text-slate-text-secondary mt-1.5 font-medium">
-        {error ? 'An issue occurred while processing the documents.' : 'This may take a while'}
+        {error ? 'We encountered a problem while analyzing the documents.' : 'This may take a while'}
       </p>
 
-      {/* Horizontal / Vertical 4-Stage Stepper */}
-      <div className="w-full mt-10 p-6 bg-white rounded-2xl border border-slate-border shadow-sm text-left">
+      {/* 4-Stage Stepper List */}
+      <div className="w-full mt-8 p-6 bg-white rounded-2xl border border-slate-border shadow-sm text-left">
         <div className="space-y-4">
           {STEPS.map((step, idx) => {
             const status = getStepStatus(step.id, idx);
             return (
               <div key={step.id} className="flex items-center gap-4">
-                {/* Step indicator circle */}
                 <div
                   className={clsx(
                     'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all flex-shrink-0',
@@ -124,7 +122,6 @@ export const ProcessingStepper: React.FC<ProcessingStepperProps> = ({
                   )}
                 </div>
 
-                {/* Step text */}
                 <div className="min-w-0 flex-1">
                   <div
                     className={clsx(
@@ -142,7 +139,6 @@ export const ProcessingStepper: React.FC<ProcessingStepperProps> = ({
                   </div>
                 </div>
 
-                {/* Status tag */}
                 {status === 'active' && (
                   <span className="text-[11px] font-medium text-primary bg-primary-light px-2 py-0.5 rounded-full animate-pulse">
                     In progress
@@ -153,28 +149,33 @@ export const ProcessingStepper: React.FC<ProcessingStepperProps> = ({
                     Done
                   </span>
                 )}
+                {status === 'failed' && (
+                  <span className="text-[11px] font-medium text-status-error bg-red-50 px-2 py-0.5 rounded-full">
+                    Failed
+                  </span>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Error message box if failed */}
+        {/* Clear, user-friendly Error message card */}
         {error && (
-          <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-status-error text-left">
-            <div className="font-semibold mb-1 flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" />
-              Processing halted
+          <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-status-error text-left space-y-2">
+            <div className="font-semibold flex items-center gap-1.5 text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Document Processing Issue</span>
             </div>
-            <div>{error}</div>
-            <div className="mt-4 flex gap-3">
+            <p className="text-slate-700 text-xs leading-relaxed">{error}</p>
+            <div className="pt-2 flex flex-wrap gap-2.5">
               {onRetry && (
-                <Button size="sm" variant="danger" onClick={onRetry}>
-                  Retry Stage
+                <Button size="sm" variant="danger" onClick={onRetry} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+                  Retry Processing
                 </Button>
               )}
               {onCancel && (
-                <Button size="sm" variant="secondary" onClick={onCancel}>
-                  Cancel &amp; Re-upload
+                <Button size="sm" variant="secondary" onClick={onCancel} leftIcon={<Upload className="w-3.5 h-3.5" />}>
+                  Upload Different Files
                 </Button>
               )}
             </div>
