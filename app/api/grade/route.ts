@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateStructured } from '@/lib/gemini';
 import { GRADE_ANSWERS_PROMPT } from '@/lib/prompts';
 import { Question, AnswerBlock, Mapping, Grade, OverallSummary } from '@/lib/types';
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rateLimiter';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,11 @@ interface GradeApiResponse {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit.resetSeconds);
+  }
+
   try {
     const body = await req.json();
     const questions: Question[] = Array.isArray(body?.questions) ? body.questions : [];
@@ -70,7 +76,6 @@ export async function POST(req: NextRequest) {
           maxScore: 10,
         });
       } else {
-        // Unanswered questions are scored 0 locally without wasting an AI call
         localGrades.push({
           questionId: q.id,
           score: 0,
@@ -116,7 +121,6 @@ ${JSON.stringify(answeredPairs, null, 2)}
       aiOverallFeedback = 'No answers were detected on the answer sheet. All questions remained unanswered.';
     }
 
-    // Combine grades for all questions
     const finalGradesMap = new Map<string, Grade>();
     aiGrades.forEach((g) => finalGradesMap.set(g.questionId, g));
     localGrades.forEach((g) => finalGradesMap.set(g.questionId, g));
@@ -133,7 +137,6 @@ ${JSON.stringify(answeredPairs, null, 2)}
       );
     });
 
-    // Compute verified totalScore = sum of all individual scores
     const calculatedTotalScore = finalGrades.reduce((acc, curr) => acc + curr.score, 0);
     const calculatedMaxScore = finalGrades.reduce((acc, curr) => acc + curr.maxScore, 0);
 

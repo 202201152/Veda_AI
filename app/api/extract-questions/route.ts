@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateStructured } from '@/lib/gemini';
 import { EXTRACT_QUESTIONS_PROMPT } from '@/lib/prompts';
 import { Question } from '@/lib/types';
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rateLimiter';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  // Apply per-IP rate limiting
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit.resetSeconds);
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -17,7 +24,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Server-side size validation
     const maxMb = parseInt(process.env.MAX_FILE_SIZE_MB || '15', 10);
     if (file.size > maxMb * 1024 * 1024) {
       return NextResponse.json(
@@ -26,7 +32,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Supported MIME types
     const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
     const validMimes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
     if (!validMimes.includes(mimeType)) {
@@ -36,7 +41,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Convert file to base64 inline data
     const bytes = await file.arrayBuffer();
     const base64Data = Buffer.from(bytes).toString('base64');
 
@@ -55,7 +59,6 @@ export async function POST(req: NextRequest) {
       schemaDesc
     );
 
-    // Validate and sanitize questions array
     const rawQuestions = Array.isArray(result?.questions) ? result.questions : [];
     const questions: Question[] = rawQuestions.map((q, idx) => ({
       id: q.id || `q_${idx + 1}`,

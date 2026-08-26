@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateStructured } from '@/lib/gemini';
 import { MAP_ANSWERS_PROMPT } from '@/lib/prompts';
 import { Question, AnswerBlock, Mapping, UnmatchedAnswer } from '@/lib/types';
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rateLimiter';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit.resetSeconds);
+  }
+
   try {
     const body = await req.json();
     const questions: Question[] = Array.isArray(body?.questions) ? body.questions : [];
@@ -18,7 +24,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Format questions & answer blocks summary for Gemini prompt
     const formattedQuestions = questions.map((q) => ({
       id: q.id,
       number: q.number,
@@ -51,13 +56,11 @@ ${JSON.stringify(formattedAnswerBlocks, null, 2)}
       unmatchedAnswers: UnmatchedAnswer[];
     }>(prompt, [], schemaDesc);
 
-    // Verify all questions have an entry in mappings
     const rawMappings = Array.isArray(result?.mappings) ? result.mappings : [];
     const mappedQuestionIds = new Set(rawMappings.map((m) => m.questionId));
 
     const finalMappings: Mapping[] = [...rawMappings];
 
-    // Ensure no question is left unmapped
     questions.forEach((q) => {
       if (!mappedQuestionIds.has(q.id)) {
         finalMappings.push({

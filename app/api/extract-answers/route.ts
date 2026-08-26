@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateStructured } from '@/lib/gemini';
 import { EXTRACT_ANSWERS_PROMPT } from '@/lib/prompts';
 import { AnswerBlock, BBox } from '@/lib/types';
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rateLimiter';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,11 @@ function sanitizeBbox(rawBoxes: unknown[], defaultPage = 1): BBox[] {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimit = checkRateLimit(req);
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit.resetSeconds);
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -33,7 +39,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Server-side size validation
     const maxMb = parseInt(process.env.MAX_FILE_SIZE_MB || '15', 10);
     if (file.size > maxMb * 1024 * 1024) {
       return NextResponse.json(
@@ -42,7 +47,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Supported MIME types
     const mimeType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
     const validMimes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
     if (!validMimes.includes(mimeType)) {
