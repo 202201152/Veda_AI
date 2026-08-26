@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { TopBar } from '@/components/shell/TopBar';
 import { UploadZone, UploadedFileData } from '@/components/upload/UploadZone';
 import { ProcessingStepper, PipelineStage } from '@/components/upload/ProcessingStepper';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { QuestionList } from '@/components/results/QuestionList';
+import { AnswerSheetViewer } from '@/components/results/AnswerSheetViewer';
+import { HighlightOverlay } from '@/components/results/HighlightOverlay';
+import { ArrowRight, Sparkles, AlertCircle, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { rasterizeDocument, RasterizedPage } from '@/lib/pdfToImages';
 import { Question, AnswerBlock, Mapping, UnmatchedAnswer, Grade, OverallSummary } from '@/lib/types';
@@ -27,15 +30,77 @@ export default function Home() {
   const [processingError, setProcessingError] = useState<string | null>(null);
 
   // Pipeline Data State
-  const [, setRasterizedPages] = useState<RasterizedPage[]>([]);
-  const [, setQuestions] = useState<Question[]>([]);
-  const [, setAnswerBlocks] = useState<AnswerBlock[]>([]);
-  const [, setMappings] = useState<Mapping[]>([]);
-  const [, setUnmatchedAnswers] = useState<UnmatchedAnswer[]>([]);
-  const [, setGrades] = useState<Grade[]>([]);
-  const [, setOverallSummary] = useState<OverallSummary | null>(null);
+  const [rasterizedPages, setRasterizedPages] = useState<RasterizedPage[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answerBlocks, setAnswerBlocks] = useState<AnswerBlock[]>([]);
+  const [mappings, setMappings] = useState<Mapping[]>([]);
+  const [unmatchedAnswers, setUnmatchedAnswers] = useState<UnmatchedAnswer[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [overallSummary, setOverallSummary] = useState<OverallSummary | null>(null);
+
+  // Selection & Navigation State
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
 
   const canStartMapping = Boolean(questionPaper && answerSheet && !qpError && !asError);
+
+  const mappingMap = useMemo(() => {
+    const map = new Map<string, Mapping>();
+    mappings.forEach((m) => map.set(m.questionId, m));
+    return map;
+  }, [mappings]);
+
+  const answerBlockMap = useMemo(() => {
+    const map = new Map<string, AnswerBlock>();
+    answerBlocks.forEach((a) => map.set(a.id, a));
+    return map;
+  }, [answerBlocks]);
+
+  const questionMap = useMemo(() => {
+    const map = new Map<string, Question>();
+    questions.forEach((q) => map.set(q.id, q));
+    return map;
+  }, [questions]);
+
+  // Selected question object
+  const selectedQuestion = useMemo(() => {
+    return questions.find((q) => q.id === selectedQuestionId) || null;
+  }, [questions, selectedQuestionId]);
+
+  // Find all answer blocks for the selected question
+  const selectedAnswerBlocks = useMemo(() => {
+    if (!selectedQuestionId) return [];
+    const mapping = mappingMap.get(selectedQuestionId);
+    if (!mapping || !mapping.answerBlockIds) return [];
+    return mapping.answerBlockIds
+      .map((id) => answerBlockMap.get(id))
+      .filter((b): b is AnswerBlock => Boolean(b));
+  }, [selectedQuestionId, mappingMap, answerBlockMap]);
+
+  // Multi-page detection for the selected question
+  const selectedQuestionPages = useMemo(() => {
+    const pages = new Set<number>();
+    selectedAnswerBlocks.forEach((block) => {
+      block.bbox.forEach((box) => pages.add(box.page));
+    });
+    return Array.from(pages).sort((a, b) => a - b);
+  }, [selectedAnswerBlocks]);
+
+  const handleSelectQuestion = (q: Question) => {
+    setSelectedQuestionId(q.id);
+
+    // Auto-scroll AnswerSheetViewer to first page containing the answer
+    const mapping = mappingMap.get(q.id);
+    if (mapping && mapping.answerBlockIds.length > 0) {
+      for (const blockId of mapping.answerBlockIds) {
+        const block = answerBlockMap.get(blockId);
+        if (block && block.bbox.length > 0) {
+          setTargetPage(block.bbox[0].page);
+          break;
+        }
+      }
+    }
+  };
 
   const runPipeline = async () => {
     if (!questionPaper || !answerSheet) return;
@@ -45,7 +110,7 @@ export default function Home() {
     setProcessingError(null);
 
     try {
-      // Step 0: Rasterize Answer Sheet for client-side viewer
+      // Step 0: Rasterize Answer Sheet
       const rasterPages = await rasterizeDocument(answerSheet.file);
       setRasterizedPages(rasterPages);
 
@@ -126,6 +191,18 @@ export default function Home() {
       setGrades(gradeData.grades);
       setOverallSummary(gradeData.overallSummary);
 
+      // Default select first question
+      if (qpData.questions.length > 0) {
+        setSelectedQuestionId(qpData.questions[0].id);
+        const firstMap = mapData.mappings.find((m) => m.questionId === qpData.questions[0].id);
+        if (firstMap && firstMap.answerBlockIds.length > 0) {
+          const firstBlock = asData.answerBlocks.find((b) => b.id === firstMap.answerBlockIds[0]);
+          if (firstBlock && firstBlock.bbox.length > 0) {
+            setTargetPage(firstBlock.bbox[0].page);
+          }
+        }
+      }
+
       setCurrentStage('completed');
       setViewState('results');
     } catch (err: unknown) {
@@ -140,9 +217,59 @@ export default function Home() {
     setProcessingError(null);
   };
 
+  // Render Highlight Overlays for a given page
+  const renderOverlayForPage = (pageNumber: number) => {
+    const overlays: React.ReactNode[] = [];
+
+    // 1. Render active highlights for the currently selected question
+    if (selectedQuestion) {
+      selectedAnswerBlocks.forEach((block) => {
+        block.bbox.forEach((box, bIdx) => {
+          if (box.page === pageNumber) {
+            const labelText = `Q${selectedQuestion.number}${selectedQuestion.subpart ? `(${selectedQuestion.subpart})` : ''}`;
+            overlays.push(
+              <HighlightOverlay
+                key={`selected-${block.id}-${bIdx}`}
+                bbox={box}
+                label={labelText}
+                isActive={true}
+              />
+            );
+          }
+        });
+      });
+    } else {
+      // 2. If no question is explicitly selected, render all answer blocks subtly
+      answerBlocks.forEach((block) => {
+        block.bbox.forEach((box, bIdx) => {
+          if (box.page === pageNumber) {
+            overlays.push(
+              <HighlightOverlay
+                key={`all-${block.id}-${bIdx}`}
+                bbox={box}
+                label={block.detectedLabel ? `Q${block.detectedLabel}` : 'Ans'}
+                isActive={false}
+                onClick={() => {
+                  // Find question that maps to this block
+                  const mapping = mappings.find((m) => m.answerBlockIds.includes(block.id));
+                  if (mapping) {
+                    const q = questionMap.get(mapping.questionId);
+                    if (q) handleSelectQuestion(q);
+                  }
+                }}
+              />
+            );
+          }
+        });
+      }
+    )}
+
+    return overlays;
+  };
+
   return (
     <div className="flex h-screen w-full bg-slate-bg overflow-hidden">
-      {/* Sidebar - automatically collapsed during processing and results, expanded on upload */}
+      {/* Sidebar */}
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -150,7 +277,7 @@ export default function Home() {
       />
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <TopBar
           showBack={viewState !== 'upload'}
           onBack={handleBackToUpload}
@@ -160,7 +287,7 @@ export default function Home() {
 
         {/* View State: Upload */}
         {viewState === 'upload' && (
-          <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 max-w-5xl mx-auto w-full">
+          <main className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 max-w-5xl mx-auto w-full overflow-y-auto">
             <div className="relative mb-6">
               <div className="w-20 h-20 rounded-full bg-primary-peach/20 p-1 ring-4 ring-primary-peach/30 flex items-center justify-center shadow-md">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-3xl shadow-inner">
@@ -229,7 +356,7 @@ export default function Home() {
 
         {/* View State: Processing */}
         {viewState === 'processing' && (
-          <main className="flex-1 flex items-center justify-center p-6 w-full">
+          <main className="flex-1 flex items-center justify-center p-6 w-full overflow-y-auto">
             <ProcessingStepper
               currentStage={currentStage}
               error={processingError}
@@ -239,17 +366,60 @@ export default function Home() {
           </main>
         )}
 
-        {/* View State: Results Placeholder (Wired in subsequent tickets) */}
+        {/* View State: Results Split Pane */}
         {viewState === 'results' && (
-          <main className="flex-1 flex items-center justify-center p-6">
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-slate-text-primary">Results Ready</h2>
-              <p className="text-sm text-slate-text-secondary mt-1">
-                Extraction and grading complete.
-              </p>
-              <Button variant="secondary" onClick={handleBackToUpload} className="mt-4">
-                Upload New Files
-              </Button>
+          <main className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+            {/* Left Panel: Question List (~400px wide) */}
+            <div className="w-full md:w-[410px] h-full flex-shrink-0 flex flex-col border-r border-slate-border">
+              <QuestionList
+                questions={questions}
+                selectedQuestionId={selectedQuestionId}
+                onSelectQuestion={handleSelectQuestion}
+                mappings={mappings}
+                grades={grades}
+              />
+            </div>
+
+            {/* Right Panel: Answer Sheet Viewer with Highlights */}
+            <div className="flex-1 h-full flex flex-col min-w-0 relative">
+              {/* Multi-page banner indicator if selected answer spans multiple pages */}
+              {selectedQuestionPages.length > 1 && (
+                <div className="bg-primary-light/90 border-b border-primary/20 px-4 py-2 flex items-center justify-between text-xs text-primary font-semibold z-10 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    <span>
+                      Answer for Q{selectedQuestion?.number} spans {selectedQuestionPages.length} pages (Pages {selectedQuestionPages.join(', ')})
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {selectedQuestionPages.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setTargetPage(p)}
+                        className="px-2 py-0.5 rounded bg-white text-primary text-xs font-bold shadow-xs hover:bg-primary hover:text-white transition-colors"
+                      >
+                        Go to Page {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Unanswered banner if selected question is unanswered */}
+              {selectedQuestion && mappingMap.get(selectedQuestion.id)?.status === 'unanswered' && (
+                <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2 text-xs text-status-error font-medium z-10 animate-fadeIn">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    Question {selectedQuestion.number} was identified as unanswered on the student&apos;s answer sheet.
+                  </span>
+                </div>
+              )}
+
+              <AnswerSheetViewer
+                pages={rasterizedPages}
+                targetPage={targetPage}
+                renderOverlayForPage={renderOverlayForPage}
+              />
             </div>
           </main>
         )}
