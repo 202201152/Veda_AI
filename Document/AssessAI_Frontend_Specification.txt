@@ -1,0 +1,196 @@
+FRONTEND SPECIFICATION DOCUMENT
+VedaAI — AI Teacher's Toolkit (Assessment Extraction & Answer Mapping)
+Version 2.0  ·  Draft  ·  Updated against the provided VedaAI mockup (Extraction_flow.png) — reconcile against the live Figma file where they differ
+What changed in v2.0: the feature is no longer a standalone tool — it now ships as the “AI Teacher's Toolkit” module inside the existing VedaAI teacher platform, reusing VedaAI's app shell (sidebar navigation, top bar, breadcrumb, account menu). The color system, upload screen, and results layout below have all been redrawn to match. Exact hex values are sampled from the shared mockup image; confirm against the live Figma file before final implementation.
+1. Color Palette
+A shift from the v1.0 indigo/amber “document workspace” palette to VedaAI's warmer orange system, with green now used for the answer-highlight overlay instead of amber.
+Name
+Hex
+Usage
+Primary Orange
+#F4522D
+Primary buttons, active nav states, links, emphasis words in headings (“Question Paper” / “Answer Sheet”), selected question's status accents.
+Primary Orange Dark
+#D93F1D
+Hover/pressed state for primary buttons and interactive elements.
+Highlight Peach
+#F97862
+Solid highlight chip behind the emphasised part of a page headline (e.g. the “Question Paper & Answer Sheets” chip on the Upload screen).
+Highlight Green
+#3F9142
+The answer-region highlight overlay on the answer sheet — solid border + ~15% opacity fill, plus the small “Q#” tag pinned to the highlighted region. Replaces the amber highlight from v1.0.
+Success
+#3F9142
+‘Correct’ / high-score grading labels, ‘Answered’ status, score badges ≥70%.
+Warning
+#F59E0B
+‘Partial’ grading labels, mid-range score badges, low-confidence flags.
+Error
+#DC4C3E
+‘Incorrect’ / low-score grading labels, unmatched-answer indicators, destructive/error states.
+Neutral Charcoal
+#333333
+The “AI Teacher's Toolkit” nav button fill, question-number circle badges, dark UI accents. Not pure black.
+Background
+#F8FAFC
+App background — a very light neutral slate.
+Surface
+#FFFFFF
+Card, panel, and sidebar/top-bar backgrounds.
+Border
+#E2E8F0
+Default border color for cards, inputs, dividers.
+Text Primary
+#0F172A
+Headings and primary body text.
+Text Secondary
+#64748B
+Helper text, metadata, placeholder text, page numbers, breadcrumb label.
+2. Typography
+Unchanged from v1.0 — Inter throughout, Semibold for headings, Regular/Medium for body and OCR'd text. The mockup is consistent with this system; no evidence of a font change.
+Style
+Weight
+Size / Line height
+Usage
+H1
+Semibold
+24px / 30px
+Page title (e.g. “Upload Question Paper & Answer Sheets”).
+H2
+Semibold
+20px / 26px
+Panel headers, e.g. “Extracted Questions”, “Answer Sheet”.
+H3
+Medium
+16px / 22px
+Question list item title / number label.
+Body
+Regular
+14px / 20px
+Question text, feedback text, general UI copy.
+Small / Meta
+Regular
+12px / 16px
+Page numbers, confidence scores, file size/page-count meta, breadcrumb text.
+OCR / extracted text
+Regular
+14px / 22px
+Slightly increased line height for readability of raw extracted answer text.
+Button Label
+Semibold
+14px / 20px
+All button text, sentence case.
+3. App Shell (new in v2.0)
+The mockup embeds the toolkit inside VedaAI's existing teacher-portal shell. This shell is assumed to already exist in the platform — this document specifies how the toolkit's own screens sit inside it, not a rebuild of VedaAI itself. See the Security & Access Document for how the visible profile/school info interacts with this assignment's “no authentication” constraint.
+3.1 Sidebar — expanded state
+Width ~260px, white Surface background, 1px Border-colored right edge.
+Top row: VedaAI logomark + wordmark (bold, Text Primary), with a small collapse-toggle icon at the far right of the row.
+Directly below: the “AI Teacher's Toolkit” button — a full-width pill, Neutral Charcoal fill, 1px Primary Orange border, white semibold label with a small orange sparkle icon. Always shown in its active/current styling while any toolkit screen is open.
+Primary nav list below (icon + label rows, 8px vertical rhythm): Home, My Classroom, Assignments, Exams, My Library. The current section (“Exams”) is shown with a light neutral background fill on its row.
+Pinned to the bottom: a school profile card — light neutral rounded card containing a small school crest/avatar image, the school name in bold (Text Primary), and its city on the line below (Text Secondary).
+3.2 Sidebar — collapsed state
+On the Results screen the sidebar automatically collapses to an icon-only rail so the split-pane workspace gets the full width it needs:
+Same nav items, icons only, vertically stacked, no labels.
+A small VedaAI mark near the bottom of the rail.
+A “»” expand chevron at the very bottom restores the full labelled sidebar.
+3.3 Top bar
+Desktop: white Surface background, 64px tall, 1px Border-colored bottom edge.
+Left: back-arrow icon button, then a small page/folder icon plus the current breadcrumb label (e.g. “Exams”) in Text Secondary.
+Right, in order: a “?” help icon (circular outline button), a bell notification icon with a small red unread dot, a sparkle/“AI” icon button, and the account control — circular avatar photo + teacher name (semibold) + a small chevron-down opening an account menu.
+Mobile: a compact header carries the phone status bar, then a white app-bar row with a back-chevron (or hamburger, screen-dependent), the VedaAI wordmark, a bell icon with unread dot, and the avatar. A hamburger/menu icon appears at the far right on screens without a back action.
+4. Page-Level Layouts
+4.1 Upload screen
+Centered page title: “Upload ” in Text Primary immediately followed by a Highlight Peach chip containing “Question Paper & Answer Sheets” — replaces the v1.0 left-aligned, half-highlighted headline.
+Centered subheading below the title: “Upload both files to get started”, Text Secondary.
+A circular illustrated avatar (friendly teacher illustration, peach ring border with small orange accent dots) centered above the two upload cards — purely decorative, sets a warmer tone than v1.0's plain workspace.
+Two upload cards side by side, white Surface, ~12px corner radius, subtle shadow: a small square upload-icon button centered at the top of each card, then a bold label (“Upload ” in Text Primary + “Question Paper” / “Answer Sheet” in Primary Orange), then “Max 10MB” in Small/Meta under the label.
+Once a file is attached, its card switches to a compact file-chip look: small red file-type icon (e.g. “PDF”), filename, a “{size} • {page count} Pages” meta line, and a small circular count badge in the corner.
+“Start Mapping” button below the cards: Neutral Charcoal fill pill, white label, trailing arrow icon; disabled (lighter/translucent, not clickable) until both files are validly attached.
+Helper line under the button, Text Secondary: “Once both files are uploaded, you'll be able to map answers with questions.”
+4.2 Processing screen
+Content area centers a 4-point orange sparkle icon above the fold.
+Bold “Extracting…” headline, Text Primary, with “This may take a while” beneath it in Text Secondary.
+The mockup shows this as a simple centered state rather than v1.0's horizontal 4-step stepper graphic — the underlying Processing Stepper component (Section 5) still exists and still gates on real network responses; this screen is its visual treatment while a stage is in flight, not a replacement for the stepper's logic.
+4.3 Results screen — split pane (desktop)
+Left panel (~380–420px, independent scroll): header row reading “Extracted Questions (from question paper)” with an “Expand All” text link at the right.
+Each question item: a Neutral Charcoal circular number badge (white numeral) replaces v1.0's colored left-border accent; question text; a score/status pill at the top-right of the item (Success/Warning/Error family per Section 1); a chevron to expand/collapse.
+Expanding an item reveals its “AI Feedback” inline, directly beneath that question, as a nested white card with a 1px Primary Orange border, a bold “AI Feedback” label, and 1–2 sentences of feedback. This replaces v1.0's separate global Grading Summary panel for per-question feedback — the overall score/summary panel described in Section 4.5 still exists for the whole-sheet total.
+Right panel (flexible width): header row with a “Questions | Answer Sheet” pill toggle (kept for parity with the mobile tab switcher even though desktop shows both panels at once, matching the mockup), plus zoom controls (“−  100%  +”) and page navigation (“‹  Page 1 of 4  ›”) at the top-right of the pane.
+Below that: the rasterized answer-sheet page(s), scrollable independently of the question list.
+4.4 Highlight overlay (updated color)
+Fill: Highlight Green at ~15% opacity; border: 2px solid Highlight Green; corner radius 4px — replaces the v1.0 amber overlay.
+A small solid-green “Q{n}” tag is pinned at the top-left corner of the highlighted region, overlapping its border, rather than living only in a legend near the question.
+Multi-page answers: every relevant page shows its own overlay and tag simultaneously, exactly as in v1.0.
+Transition: 150ms fade-in/out when the selected question changes, unchanged from v1.0.
+4.5 Grading summary panel
+Unchanged in concept from v1.0: a prominent total score, a colored ring/badge matching overall performance, an overall AI feedback paragraph, and the permanent “AI-generated assessment — not a verified answer key match” disclosure. Only the color tokens feeding it change, per Section 1.
+4.6 Unmatched answers panel
+Unchanged from v1.0: visually distinct via a dashed Error-colored border, each item clickable to highlight its region exactly like a question does.
+4.7 Mobile / responsive
+Below the tablet breakpoint (~768px) the split pane collapses into a single column with a “Questions / Answer Sheet” pill tab switcher: rounded track in a light neutral fill, the active tab rendered as a solid Neutral Charcoal pill with white label, the inactive tab as plain Text Secondary label with no fill.
+Selecting a question auto-switches to the Answer Sheet tab and still scrolls/highlights correctly, unchanged from v1.0.
+The sidebar is not shown on mobile; its nav items are assumed to live behind the top bar's hamburger menu, consistent with the rest of the VedaAI platform (out of scope to redesign here).
+5. Component Styles (carried over / refined from v1.0)
+Buttons
+Shape: border-radius 8px.
+Primary: filled Primary Orange, white label, height 40px, horizontal padding 20px, hover state Primary Orange Dark.
+Secondary: white fill, 1px Border outline, Text Primary label; hover state light orange tint background.
+Toolkit / navigation emphasis button (new): Neutral Charcoal fill, 1px Primary Orange border, white label — used for the sidebar's “AI Teacher's Toolkit” entry and the “Start Mapping” / “Process” primary actions.
+Disabled: 40% opacity, not clickable.
+Upload dropzone
+Shape: border-radius 12px, 2px dashed Border color; hover/drag-active switches to solid Primary Orange border with a light orange-tinted background.
+Once a file is added: dashed border replaced with a solid one; filename, page/image count, and a small remove (×) action shown, per Section 4.1.
+Invalid file: border and message switch to Error color with a specific reason shown inline.
+Processing stepper
+Retained as the underlying mechanism (Section 4.2 covers its visual treatment):
+Horizontal 4-step indicator: Reading question paper → Reading handwriting → Matching answers → Grading.
+Completed step: filled Primary Orange circle with a checkmark; active step: Primary Orange outline circle with a subtle pulse; failed step: Error-colored circle with an exclamation mark, halting the stepper with an error message below it.
+Question list item
+Shape: border-radius 8px, 1px Border outline, 12–16px padding, white Surface background.
+Number badge: Neutral Charcoal filled circle, white numeral — replaces the v1.0 plain numeral with no fill.
+Selected: 1px Primary Orange border around the whole item plus a very light orange background fill (matches the AI Feedback card treatment), replacing v1.0's 4px left-border accent.
+Status/score badge: small pill (border-radius 999px), colored per Section 1 (Success/Warning/Error) with a light tint background and a darker text color of the same family, e.g. “2/2” in green-on-light-green, “0/2” in red-on-light-red.
+Modals
+Unchanged from v1.0: used sparingly, border-radius 16px, centered, rgba(15,23,42,0.5) overlay.
+6. Spacing & Layout
+Token
+Value
+Usage
+space-1
+4px
+Icon-to-label gaps.
+space-2
+8px
+Gap between closely related elements.
+space-3
+12px
+Internal padding on compact components (badges, list items).
+space-4
+16px
+Default gap between cards/sections; standard card padding.
+space-6
+24px
+Page gutter margins; gap between major layout regions.
+space-8
+32px
+Gap above/below major section breaks.
+Corner radius scale
+Element
+Radius
+Buttons / inputs / toolkit pill
+8px
+Cards / dropzones / file chips
+12px
+Modals
+16px
+Highlight overlay box
+4px
+Badges / pills / tab switcher
+999px (full pill)
+Layout: max content width 1280px for the main content area (excluding the sidebar), centered. Desktop keeps the fixed-left-sidebar / top-bar shell around the fixed-left / flexible-right split-pane results layout. Mobile collapses to the single-column tab-switcher layout described in Section 4.7.
+7. API & Integration — Gemini
+Unchanged from v1.0: full request/response contracts live in the Technical Architecture Document; this remains the frontend's contract with it.
+The client never calls Gemini directly — all calls go through the app's own four API routes (extract-questions, extract-answers, map-answers, grade), keeping the API key server-side only.
+Each stage is a separate fetch call from the client, sequenced by the Processing Stepper — a stage's UI only advances once its real network response arrives.
+Grading results are visually and textually marked as AI-generated throughout the UI, never presented as an authoritative rubric match.
+This document pairs with the Technical Architecture Document (data shapes) and Security & Access Document (error states, and the note on the sidebar's profile/school display). Next: Feature Ticket List.

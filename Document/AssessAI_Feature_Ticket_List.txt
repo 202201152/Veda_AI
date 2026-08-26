@@ -1,0 +1,208 @@
+FEATURE TICKET LIST
+VedaAI — AI Teacher's Toolkit (Assessment Extraction & Answer Mapping)
+Version 2.0  ·  Draft  ·  Built from the updated PRD, Technical Architecture, Security & Access, and Frontend Specification documents
+Every ticket is scoped to be built and committed as one focused unit of work — one feature, one clear task, one way to know it's done. Phases 0–8 are the full submission scope; Phase 9 is backlog, explicitly out of scope for the deadline.
+What changed in v2.0: renumbered end-to-end after inserting TICKET 04 (App shell — sidebar, top bar & breadcrumb) into Phase 0. TICKET 09 (question list) and TICKET 18 (grading UI, formerly “score badges + summary panel”) are updated for the circular number badges and inline per-question AI Feedback shown in the new mockup. Ticket dependencies reference ticket titles rather than numbers, so downstream tickets did not otherwise need content changes — only the shifted numbering.
+Phase 0 — Foundation & Setup
+TICKET 01 · Project scaffolding
+Must-have
+Task: Initialize a Next.js 15 project (App Router, TypeScript). Install and configure Tailwind CSS, @google/generative-ai, and pdfjs-dist. Set up the folder structure exactly as defined in the Technical Architecture Document.
+Acceptance criteria:
+next dev runs cleanly on a blank Tailwind-styled page.
+Folder structure matches the Technical Architecture Document.
+All listed packages are installed and importable.
+Depends on: None — first ticket.
+TICKET 02 · Gemini client wrapper
+Must-have
+Task: Create lib/gemini.ts wrapping @google/generative-ai, reading GEMINI_API_KEY and GEMINI_MODEL from environment variables, exposing a generateStructured(prompt, files, schema) helper that calls the model and validates/parses JSON output, retrying once on a parse failure.
+Acceptance criteria:
+A test call with a sample prompt returns valid parsed JSON.
+A forced malformed response triggers exactly one retry before throwing a clear, typed error.
+Depends on: Project scaffolding
+TICKET 03 · Design tokens & base UI components
+Must-have
+Task: Implement the color palette (orange/charcoal/green system), typography, and spacing tokens from the Frontend Specification Document as Tailwind config. Build Button, Card, Badge, and ProgressBar base components.
+Acceptance criteria:
+Button/Card/Badge render with the correct colors and border-radius values from the v2.0 spec.
+Components are reused everywhere they're needed — no inline one-off styles duplicating them.
+Depends on: Project scaffolding
+TICKET 04 · App shell — sidebar, top bar & breadcrumb
+Must-have
+Task: Build the VedaAI app-shell components the toolkit's screens sit inside: Sidebar (expanded, with the “AI Teacher's Toolkit” nav button, nav list, and school profile card; and a collapsed icon-rail variant), TopBar (back action, breadcrumb, help/notification/AI icons, account control), and Breadcrumb. Profile, school, and notification data are static/placeholder props for this assignment — no real account system is built (see Security & Access Document).
+Acceptance criteria:
+Sidebar renders both its expanded and icon-rail states from a single prop/state toggle.
+TopBar renders the back action, breadcrumb label, and the four right-aligned controls (help, notifications, AI, account) matching the Frontend Specification Document.
+No part of this ticket reads or writes a real session, cookie, or account record — all shell data is passed in as static props.
+Depends on: Design tokens & base UI components
+Phase 1 — Upload & Processing UI
+TICKET 05 · Upload screen
+Must-have
+Task: Build the landing page — centered headline with the orange highlight chip, decorative avatar illustration, and two UploadZone components (Question Paper, Answer Sheet) accepting PDF/image drag-drop or browse, with client-side file type and size validation, per the v2.0 Frontend Specification Document.
+Acceptance criteria:
+An invalid file type or oversized file shows an inline error and blocks the Process button.
+A valid file switches its card to the compact file-chip look (filename, size, page count).
+The sidebar renders in its expanded state on this screen.
+Depends on: App shell — sidebar, top bar & breadcrumb, Design tokens & base UI components
+TICKET 06 · Client-side PDF rasterization
+Must-have
+Task: Create lib/pdfToImages.ts using pdfjs-dist to render each page of an uploaded PDF into an image in the browser, producing the page-image array used later by the highlight viewer.
+Acceptance criteria:
+A multi-page PDF produces one image per page in the correct order.
+A single image upload (JPG/PNG) is treated as a one-page document without needing this step.
+Depends on: Upload screen
+TICKET 07 · Processing stepper
+Must-have
+Task: Build the 4-stage progress logic (Reading question paper / Reading handwriting / Matching answers / Grading) that advances only as each real API call resolves, rendered as the centered “Extracting…” state described in the v2.0 Frontend Specification Document (Section 4.2). The sidebar collapses to its icon rail on this screen.
+Acceptance criteria:
+Each stage visually completes only after its corresponding fetch call actually returns, not on a fixed timer.
+A failed stage shows a distinct error state and halts, instead of silently continuing.
+The sidebar is in its collapsed icon-rail state for the duration of this screen.
+Depends on: App shell — sidebar, top bar & breadcrumb, Design tokens & base UI components
+Phase 2 — Question Extraction
+TICKET 08 · Question extraction API route
+Must-have
+Task: Build POST /api/extract-questions accepting the question paper file(s), calling Gemini via lib/gemini.ts with a prompt that extracts every question in printed order, treats labelled sub-parts (11(a), 11(b)) as separate entries, and preserves original numbering. Validate the response against the Question type before returning.
+Acceptance criteria:
+A sample multi-question paper with at least one sub-parted question returns entries in original printed order with sub-parts as distinct items.
+Malformed AI output is retried once, then returns a clear error rather than corrupted data.
+Depends on: Gemini client wrapper
+TICKET 09 · Question list UI
+Must-have
+Task: Build the QuestionList and QuestionListItem components showing extracted questions in order, each with a Neutral-Charcoal circular number badge, its sub-part label, and its text, per the v2.0 Frontend Specification Document.
+Acceptance criteria:
+The list renders in the exact order returned by the API.
+Sub-parts are visually distinguished from their parent question (e.g. indentation or a sub-label).
+Each item's number badge is a filled circle, not a bare numeral.
+Depends on: Question extraction API route, Design tokens & base UI components
+Phase 3 — Answer Extraction
+TICKET 10 · Answer extraction API route
+Must-have
+Task: Build POST /api/extract-answers accepting the answer sheet file(s), calling Gemini with a prompt that OCRs each handwritten answer block, detects any visible question-number label, and returns a normalized bounding box per block — supporting multiple blocks per page and answers spanning into a following page.
+Acceptance criteria:
+A sample answer sheet returns one AnswerBlock per distinct handwritten answer, with a bounding box that visually overlaps the correct handwriting when drawn.
+An answer continuing onto a second page produces two bbox entries linked as one logical answer.
+Depends on: Gemini client wrapper
+TICKET 11 · Answer sheet viewer
+Must-have
+Task: Build the AnswerSheetViewer component rendering the rasterized answer-sheet pages in a scrollable pane, with the zoom control (− 100% +) and page navigation (‹ Page 1 of 4 ›) shown at the top of the pane, independent of the question list's scroll position.
+Acceptance criteria:
+All pages render in order and can be scrolled/navigated individually.
+The zoom control and page navigator both function and reflect the currently visible page.
+Depends on: Client-side PDF rasterization, Design tokens & base UI components
+Phase 4 — Answer Mapping
+TICKET 12 · Mapping API route
+Must-have
+Task: Build POST /api/map-answers taking the extracted questions and answer blocks, calling Gemini with a prompt that matches answer blocks to questions by detected label first, falls back to content/order reasoning for ambiguous or unlabeled blocks, and explicitly lists any unanswered question and any unmatched answer block.
+Acceptance criteria:
+A shuffled/out-of-order answer sheet still maps correctly by label rather than assuming sequential order.
+A question with no corresponding handwriting is returned with status 'unanswered', never silently dropped.
+A handwriting block matching no question appears in a separate unmatched list, never force-matched to the nearest question.
+Depends on: Question extraction API route, Answer extraction API route
+TICKET 13 · Status badges on question list
+Must-have
+Task: Extend QuestionListItem to show an Answered/Unanswered status pill based on the mapping result, styled per the v2.0 badge colors (Section 1 of the Frontend Specification Document).
+Acceptance criteria:
+Every question shows exactly one status badge matching the mapping API's output.
+Depends on: Mapping API route, Question list UI
+Phase 5 — Highlighting
+TICKET 14 · Highlight overlay renderer
+Must-have
+Task: Build HighlightOverlay, an absolutely-positioned element drawn over the correct page/position in AnswerSheetViewer using a mapped answer block's bbox, styled per the v2.0 Frontend Specification Document (green translucent fill and border, with a small solid-green “Q#” tag pinned to the region's corner).
+Acceptance criteria:
+The overlay's position and size visually align with the actual handwriting region on a test answer sheet.
+The “Q#” tag renders pinned to the highlighted region's corner, not as a separate floating legend.
+Depends on: Answer sheet viewer, Mapping API route, Design tokens & base UI components
+TICKET 15 · Click-to-highlight interaction
+Must-have
+Task: Wire QuestionListItem clicks to select that question, scroll AnswerSheetViewer to the relevant page(s), and render HighlightOverlay for all of that question's mapped answer block(s).
+Acceptance criteria:
+Clicking a question whose answer is on page 3 auto-scrolls the viewer to page 3 and highlights the correct region.
+Clicking a question whose answer spans two pages highlights a region on both pages and shows a small multi-page indicator.
+Depends on: Highlight overlay renderer
+TICKET 16 · Unmatched answers panel
+Must-have
+Task: Build a distinct panel listing unmatched answer blocks (handwriting with no matching question), each clickable to highlight its region the same way a question does.
+Acceptance criteria:
+Every unmatched block from the mapping API appears here exactly once.
+The panel is visually distinct (dashed Error-colored border) from the main question list, per the Frontend Specification Document.
+Depends on: Mapping API route, Click-to-highlight interaction
+Phase 6 — Grading & Feedback
+TICKET 17 · Grading API route
+Should-have
+Task: Build POST /api/grade taking the mapped question/answer pairs, calling Gemini with a prompt requesting a score out of a configurable max, a correctness label, and 1–2 sentence feedback per question, plus one additional call for an overall summary and total score. Unanswered questions are scored 0 locally without an AI call.
+Acceptance criteria:
+Every answered question receives a score, correctness label, and feedback string.
+Unanswered questions are automatically scored 0 without a wasted AI call.
+The overall summary's total score equals the sum of individual scores.
+Depends on: Mapping API route
+TICKET 18 · Grading UI — inline AI feedback & summary panel
+Should-have
+Task: Add score badges to QuestionListItem; make each item expandable to reveal its “AI Feedback” inline (white card, orange border, bold “AI Feedback” label, feedback text) directly beneath that question, per the v2.0 Frontend Specification Document — replacing the v1.0 approach of showing per-question feedback only in a separate global panel. Also build the GradingSummaryPanel showing total score, overall feedback, and the permanent 'AI-generated, not a verified rubric match' disclosure.
+Acceptance criteria:
+Score badge color matches correctness (green/amber/red) per the Frontend Specification Document.
+Expanding a question reveals its AI Feedback inline within the list, without navigating away or opening a modal.
+The summary panel visibly carries the AI-generated disclosure at all times, not just on first view.
+Depends on: Grading API route, Design tokens & base UI components
+Phase 7 — Edge Cases, Errors & Polish
+TICKET 19 · Rate limiting & abuse protection
+Must-have
+Task: Add lib/rateLimiter.ts, an in-memory per-IP request counter applied to all four API routes, rejecting requests over a configurable per-minute limit.
+Acceptance criteria:
+Exceeding the limit returns a clear 429 response with a retry message instead of calling Gemini.
+Limits reset correctly after the time window.
+Depends on: Question extraction API route, Answer extraction API route, Mapping API route, Grading API route
+TICKET 20 · Error & empty states
+Must-have
+Task: Add clear UI states for: Gemini timeout/failure, corrupted/unreadable file, empty extraction result (no questions or no answers found), and a blank/all-unanswered answer sheet, per the Security & Access Document's error handling guide.
+Acceptance criteria:
+Each scenario shows a specific, plain-English message with a way to retry or re-upload.
+No scenario ever shows a blank screen or a raw error/stack trace to the user.
+Depends on: Question extraction API route, Answer extraction API route, Mapping API route, Grading API route
+TICKET 21 · Responsive layout
+Should-have
+Task: Adapt the split-pane results layout to the tabbed single-column view (Questions / Answer Sheet pill tab switcher) below the Frontend Specification Document's mobile breakpoint, and hide the sidebar on mobile per the v2.0 spec.
+Acceptance criteria:
+On a narrow viewport, both panels remain fully usable via tab switching, with the active tab shown as a solid Neutral Charcoal pill.
+Selecting a question on mobile auto-switches to the Answer Sheet tab and still highlights correctly.
+Depends on: Click-to-highlight interaction, Design tokens & base UI components
+Phase 8 — Deployment & Submission
+TICKET 22 · Vercel deployment
+Must-have
+Task: Deploy the app to Vercel, set GEMINI_API_KEY and other environment variables in the Vercel dashboard, and verify the live URL runs the full end-to-end flow.
+Acceptance criteria:
+The live URL successfully processes a real question paper + answer sheet pair end-to-end.
+No API keys are exposed in client-side code or a committed .env file.
+Depends on: Rate limiting & abuse protection, Error & empty states
+TICKET 23 · README & submission write-up
+Must-have
+Task: Write a README covering the approach, the AI model/API used and why, and the assumptions/limitations listed in the Product Requirements Document (including the app-shell/no-auth note), ready to paste into the submission form.
+Acceptance criteria:
+README answers all required submission points (approach, AI model, assumptions/limitations) without needing to open other documents.
+Depends on: Vercel deployment
+Phase 9 — Post-Submission Backlog
+Explicitly out of scope for the deadline, per the PRD — kept here so they're ready to pick up afterward.
+TICKET 24 · Batch multi-student processing
+Nice-to-have
+Task: Allow one question paper to be run against multiple answer sheets in a single session, showing results per student.
+Acceptance criteria:
+Uploading N answer sheets against one question paper produces N independent result sets without mixing data between students.
+Depends on: Mapping API route
+TICKET 25 · Exportable graded report
+Nice-to-have
+Task: Add an export action that generates a PDF summarizing questions, answers, scores, and feedback for one student.
+Acceptance criteria:
+Exported PDF includes every question, its answer status, and its grade in printed order.
+Depends on: Grading UI — inline AI feedback & summary panel
+TICKET 26 · Manual grade override
+Nice-to-have
+Task: Let the teacher adjust an AI-assigned score and correctness label per question, recalculating the overall summary.
+Acceptance criteria:
+Editing a score updates the total in the Grading Summary panel immediately.
+Depends on: Grading UI — inline AI feedback & summary panel
+TICKET 27 · Multi-language support
+Nice-to-have
+Task: Extend extraction and grading prompts to support question papers and answers in languages beyond English.
+Acceptance criteria:
+A non-English test document extracts questions and answers with the same accuracy expectations as the English case.
+Depends on: Question extraction API route, Answer extraction API route
+This completes the 5-document build kit: Product Requirements, Technical Architecture, Security & Access, Frontend Specification, and this Feature Ticket List. Work through Phases 0–8 in order for the submission; Phase 9 is backlog only.

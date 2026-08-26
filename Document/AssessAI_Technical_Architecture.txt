@@ -1,0 +1,240 @@
+TECHNICAL ARCHITECTURE DOCUMENT
+VedaAI — AI Teacher's Toolkit (Assessment Extraction & Answer Mapping)
+Version 2.0  ·  Draft  ·  Companion to the Product Requirements Document
+What changed in v2.0: adds a components/shell/ layer (Sidebar, TopBar, Breadcrumb, SchoolProfileCard) so the four-route pipeline can render inside the VedaAI app shell shown in the updated mockup. The pipeline itself — tech stack, data model, and the four API routes — is unchanged from v1.0; the shell components consume static placeholder data only, per the Security & Access Document's no-accounts constraint.
+1. Recommended Tech Stack
+No database or authentication is required or wanted here, so the stack is deliberately lean: one Next.js app, one AI provider, and nothing else to operate or pay for.
+Layer
+Technology
+Why this choice
+Frontend
+Next.js 15 (App Router) + React 19
+File-based routing and Route Handlers let the whole app — UI and API — live in one deployable project, matching the assignment's Next.js recommendation.
+Backend / API
+Next.js Route Handlers (Node.js runtime)
+Four small API routes (extract-questions, extract-answers, map-answers, grade) handle the pipeline; no separate server needed.
+AI model
+Google Gemini (gemini-2.0-flash, via @google/generative-ai)
+Chosen for its free tier, strong handwriting OCR, native multi-image/PDF input, and reliable structured JSON output — all four pipeline stages can be one model.
+PDF rendering (display only)
+pdfjs-dist (client-side)
+Rasterizes each uploaded PDF page into an image in the browser so the highlight overlay has something concrete to sit on top of. Separate from what's sent to Gemini, which can read PDFs natively.
+Styling
+Tailwind CSS
+Fast, consistent implementation of the Frontend Specification Document's design tokens (including the v2.0 orange/charcoal/green palette) without hand-written CSS files.
+Client state
+React state (useState/useReducer)
+All extracted data lives in memory in the browser tab for the duration of one session, including which sidebar/collapse state and which question is expanded — no external state library needed.
+Data fetching
+Native fetch, sequential per stage
+Each pipeline stage is a distinct request, which is what drives the real (not simulated) processing progress bar. SWR's caching model isn't useful for a one-shot pipeline.
+Hosting
+Vercel
+Zero-config Next.js deployment, matching the assignment's “must be deployed and accessible through a live URL” requirement.
+Storage
+In-memory only, per request
+No database, per the assignment's constraints. Uploaded files and extraction results exist only for the life of a single request/response cycle. The shell's profile/school display is static, not stored.
+2. File & Folder Structure
+A single-page client app (Upload → Processing → Results are view states, not separate routes) keeps all extracted data in React state. The v2.0 addition is components/shell/, holding the VedaAI app-chrome components; everything else is unchanged from v1.0.
+assessai/
+├── app/
+│   ├── page.tsx                     # Whole app shell: upload / processing / results states
+│   ├── layout.tsx
+│   ├── globals.css
+│   └── api/
+│       ├── extract-questions/route.ts
+│       ├── extract-answers/route.ts
+│       ├── map-answers/route.ts
+│       └── grade/route.ts
+├── components/
+│   ├── ui/                          # Button, Card, Badge, ProgressBar
+│   ├── shell/                       # NEW — VedaAI app-shell chrome
+│   │   ├── Sidebar.tsx              #   expanded + collapsed icon-rail variants
+│   │   ├── TopBar.tsx               #   back action, breadcrumb, help/notif/AI/account
+│   │   ├── Breadcrumb.tsx
+│   │   └── SchoolProfileCard.tsx    #   static placeholder profile + school data
+│   ├── upload/
+│   │   ├── UploadZone.tsx
+│   │   └── ProcessingStepper.tsx
+│   └── results/
+│       ├── QuestionList.tsx
+│       ├── QuestionListItem.tsx     #   + inline AI Feedback expand/collapse
+│       ├── AnswerSheetViewer.tsx    #   + zoom & page-navigation controls
+│       ├── HighlightOverlay.tsx
+│       ├── UnmatchedAnswersPanel.tsx
+│       └── GradingSummaryPanel.tsx
+├── lib/
+│   ├── gemini.ts                    # Gemini client wrapper + JSON validation/retry
+│   ├── prompts.ts                   # Prompt templates for each pipeline stage
+│   ├── pdfToImages.ts               # Client-side page rasterization (pdfjs-dist)
+│   ├── rateLimiter.ts               # In-memory per-IP request limiter
+│   └── types.ts                     # Question, AnswerBlock, Mapping, Grade types
+├── public/
+├── .env.local                       # Local secrets, never committed
+├── next.config.js
+├── tailwind.config.js
+└── package.json
+3. Data Model (In-Memory Types)
+Unchanged from v1.0. With no database, there's no schema to migrate — just shared TypeScript types that every API response and UI component agree on. The shell components in Section 2 take their own small, separate prop shapes (teacher name, avatar URL, school name/city, current breadcrumb) that are not part of this pipeline data model and are never sent to any API route.
+Question
+One entry per question or labelled sub-part, in original printed order.
+Field
+Type
+Notes
+id
+string
+Generated client-side after extraction (e.g. a stable index or uuid).
+number
+string
+The printed question number, e.g. “11”.
+subpart
+string | null
+e.g. “a” for question 11(a); null for questions with no sub-parts.
+text
+string
+The extracted question text.
+page
+number
+Which page of the question paper this question appears on.
+AnswerBlock
+One entry per distinct handwritten answer block detected on the answer sheet.
+Field
+Type
+Notes
+id
+string
+Generated after extraction.
+detectedLabel
+string | null
+Any question number visible next to the handwriting, if legible; null if unlabeled.
+text
+string
+OCR'd handwritten text.
+bbox
+BBox[]
+One or more { page, x, y, width, height } boxes (normalized 0–1) — more than one when an answer spans multiple pages.
+confidence
+number
+Model's own confidence score for this OCR/detection, used to flag low-confidence blocks in the UI.
+Mapping
+The result of matching answer blocks to questions.
+Field
+Type
+Notes
+questionId
+string
+References a Question.id.
+answerBlockIds
+string[]
+One or more AnswerBlock.id values mapped to this question; empty array means unanswered.
+status
+string
+'answered', 'unanswered', or 'out_of_order' (answered, but not in printed sequence on the sheet).
+UnmatchedAnswer
+Answer blocks that don't correspond to any known question.
+Field
+Type
+Notes
+answerBlockId
+string
+References an AnswerBlock.id.
+reason
+string
+Short explanation, e.g. 'no matching question number found'.
+Grade
+Per-question AI grading result.
+Field
+Type
+Notes
+questionId
+string
+References a Question.id.
+score
+number
+Score awarded, out of maxScore.
+maxScore
+number
+Configurable per question, default 10.
+correctness
+string
+'correct', 'partial', 'incorrect', or 'ungraded' (unanswered questions).
+feedback
+string
+1–2 sentence AI-written comment, shown inline under the question when expanded (Frontend Specification Document, Section 4.3).
+OverallSummary
+Aggregate result shown in the Grading Summary panel.
+Field
+Type
+Notes
+totalScore
+number
+Sum of all individual question scores.
+maxTotalScore
+number
+Sum of all maxScore values.
+overallFeedback
+string
+AI-written summary comment across the whole answer sheet.
+4. API & Integration — Gemini Pipeline
+Unchanged from v1.0. Four sequential API routes give the processing stepper real, verifiable stages instead of a fake timed animation.
+4.1 POST /api/extract-questions
+Aspect
+Detail
+Input
+Question paper file(s) (PDF or images) as multipart form data.
+Prompt intent
+Extract every question in printed order; treat labelled sub-parts (11(a), 11(b)) as separate entries; preserve original numbering exactly as printed.
+Output
+Question[] as defined above, validated against the type before returning; malformed model output is retried once with a stricter prompt.
+4.2 POST /api/extract-answers
+Aspect
+Detail
+Input
+Answer sheet file(s) (PDF or images).
+Prompt intent
+OCR every distinct handwritten block; detect any visible question-number label; return a normalized bounding box per block, and multiple boxes for one answer that spans pages.
+Output
+AnswerBlock[] as defined above.
+4.3 POST /api/map-answers
+Aspect
+Detail
+Input
+The Question[] and AnswerBlock[] from the previous two calls.
+Prompt intent
+Match by detected label first; fall back to content/order reasoning for unlabeled or ambiguous blocks; explicitly list unanswered questions and unmatched answer blocks rather than force-matching.
+Output
+Mapping[] and UnmatchedAnswer[].
+4.4 POST /api/grade
+Aspect
+Detail
+Input
+Matched question/answer text pairs from the mapping step.
+Prompt intent
+Score each answered question out of a configurable max, assign a correctness label, and write 1–2 sentences of feedback; unanswered questions are scored 0 locally without an AI call; one additional call produces the overall summary.
+Output
+Grade[] and one OverallSummary, clearly surfaced in the UI as AI-generated rather than a verified rubric result.
+5. Environment & Configuration
+Variable
+Example
+Purpose
+GEMINI_API_KEY
+AIza...
+Server-side only API key for the Gemini API — never exposed to the client.
+GEMINI_MODEL
+gemini-2.0-flash
+Configurable so the model can be swapped (e.g. to a higher-accuracy variant) without a code change.
+MAX_FILE_SIZE_MB
+15
+Upper bound enforced both client- and server-side on each uploaded file.
+RATE_LIMIT_PER_MINUTE
+10
+Per-IP cap on API route calls, protecting the free-tier Gemini quota from abuse.
+NODE_ENV
+development / production
+Set automatically by Vercel.
+Configuration notes
+The Gemini API key must only ever be read inside API routes (server-side) — never imported into a client component or bundled into browser JavaScript.
+Because there's no database, nothing about a request should be stored in a module-level variable that could leak between concurrent users on the same serverless instance — every API route must derive its response purely from that request's own input.
+File size and type validation happens twice: once client-side for instant feedback, and again server-side, since client-side checks alone can be bypassed.
+The shell's teacher name/avatar/school fields (Section 2) are static placeholder data — hardcoded or passed as build-time props — and are never read from or written to any store, consistent with the no-accounts constraint.
+This document pairs with the Product Requirements Document. Next: Security & Access Document and Frontend Specification Document.

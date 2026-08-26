@@ -1,0 +1,72 @@
+SECURITY & ACCESS DOCUMENT
+VedaAI — AI Teacher's Toolkit (Assessment Extraction & Answer Mapping)
+Version 2.0  ·  Draft  ·  Written in plain English
+What changed in v2.0: the updated mockup shows a teacher name, avatar, and school in the sidebar, which could look like a real login. Section 1 below clarifies that this is static placeholder display matching the mockup, not a real authentication session — the “no auth” stance from v1.0 is otherwise unchanged.
+1. Authentication Method
+There is none, by design, for this feature. The assignment explicitly rules out authentication — anyone with the live URL can open the tool and use it immediately.
+No signup, no login screen, no accounts, no passwords to manage or leak.
+The live URL itself is the only access boundary — whoever has the link can upload files and run the pipeline.
+Because there's no login, there is also no persistent identity: the app has no concept of ‘this teacher’ across visits, only ‘this browser tab, right now.’
+The teacher name, avatar, and “Delhi Public School — Bokaro Steel City” text shown in the sidebar (per the provided mockup) are static placeholder data baked into the shell component, matching what the VedaAI platform would show a logged-in teacher elsewhere — no session, cookie, token, or account record backs them here. They exist for visual fidelity to the mockup only, and must not be wired up to any real auth system as part of this assignment.
+2. Access Model
+With no accounts, there are no roles to define — there is exactly one implicit role: anyone with the link has full use of the tool for the duration of their own session.
+There's no admin panel, no elevated permissions, and nothing to restrict — the entire feature set (upload, extract, map, grade) is available to every visitor equally.
+This is a deliberate simplification matching the assignment's constraints, not an oversight — a future multi-teacher or school-wide version would need real accounts and access control, which is explicitly out of scope here.
+The sidebar/top-bar shell (Frontend Specification Document, Section 3) is presentational chrome only — its nav items, help/notification/AI icons, and account control are static UI, not functioning links into a broader VedaAI backend, for the purposes of this assignment.
+3. Session & Data Isolation
+Without a database, “row-level security” in the usual sense doesn't apply — the equivalent concern here is making sure two people using the tool at the same time never see each other's uploaded files or results.
+The rule, in plain English
+Every API route must build its response only from the data sent in that exact request. Nothing about one teacher's question paper or answer sheet should ever be kept around in server memory after that request finishes, and nothing should be stored in a way a second, simultaneous request could accidentally read.
+How it's enforced
+No module-level or global variables are used to hold uploaded files, extracted questions, answers, or grades — everything is a local variable scoped to a single request handler.
+Uploaded files are read into memory, sent to Gemini, and discarded once the response is sent — nothing is written to disk on the server at any point.
+The one exception is the rate limiter, which intentionally persists a small amount of state (an IP address and a request count) across requests — it never stores file content or extracted data, only enough to enforce a request cap.
+The client (browser) is the only place a session's full results live, in React state — closing or refreshing the tab clears everything, which is expected behavior given the assignment's in-memory-only constraint. This includes the static shell profile/school fields — they're passed in on load like everything else, never fetched from a server-side session.
+4. Error Handling Guide
+What happens when something goes wrong, so failures feel handled rather than broken — this matters directly for the evaluation criteria on edge-case handling.
+Failure point
+What happens behind the scenes
+What the user sees
+Gemini API timeout or outage
+The request to Gemini fails after a reasonable timeout; no partial or corrupted data is returned to the client.
+“We couldn't process that file right now. Please try again in a moment.”
+Malformed AI JSON response
+The response is validated against the expected type; a failure triggers exactly one retry with a stricter prompt before giving up.
+If the retry also fails: “We had trouble reading that document. Try a clearer scan or a different file.”
+Rate limit exceeded
+The in-memory limiter rejects the request before it reaches Gemini.
+“Too many requests right now — please wait a minute and try again.”
+Unsupported file type
+Rejected by both client-side and server-side validation before any AI call is made.
+“Please upload a PDF or image file (JPG/PNG).”
+File too large
+Rejected before upload completes, based on MAX_FILE_SIZE_MB.
+“This file is too large. Please upload a file under [X] MB.”
+Corrupted or unreadable PDF
+The PDF parsing step fails cleanly and reports which file caused the problem.
+“We couldn't open this PDF — it may be corrupted or password-protected.”
+No questions detected
+The extraction step returns an empty array instead of guessing content that isn't there.
+“We couldn't find any questions in this file. Please check the upload and try again.”
+Blank or fully unanswered sheet
+Every question maps to ‘unanswered’ — a valid, expected result, not an error.
+The results screen shows every question flagged Unanswered, with no false extraction errors.
+5. Edge Cases to Handle
+Situations that are easy to miss in a quick demo but matter for real exam scripts — and are explicitly called out in the assignment's evaluation criteria.
+Question extraction
+Sub-parts labelled inconsistently across a paper — “11(a)”, “11 a”, “11.a” — should all be recognized as sub-parts, not separate top-level questions.
+A question paper with duplicate or skipped question numbers (e.g. a printing error) should still extract exactly what's printed, without silently renumbering.
+A very long question paper should be handled in a way that doesn't silently truncate later questions if it approaches the model's context limits — split across multiple calls if needed.
+Answer mapping
+Answers written out of order (e.g. Q5 answered before Q3) must map by label, not by assuming sequential order matches the question paper.
+An answer with no visible question-number label at all should still be attempted via content-based reasoning, and marked with lower confidence rather than left unmapped by default.
+A question with genuinely no answer must be flagged ‘unanswered’ — never force-matched to unrelated handwriting just to fill the slot.
+Handwriting that doesn't correspond to any question (e.g. rough work, a crossed-out attempt, a note to the examiner) should land in the unmatched-answers list, not be silently discarded or wrongly attached.
+Highlighting & pagination
+An answer spanning two or more pages must produce a highlighted region on every page it appears on, not just the first.
+A rotated or skewed scanned page should still produce a bounding box that visually lines up with the handwriting as rendered, even if imperfectly.
+Upload & files
+The teacher accidentally swaps the two uploads (answer sheet as question paper and vice versa) — the extraction step should still behave reasonably (e.g. find few or no clear questions) rather than crash, and the UI should be able to show a low-confidence warning.
+A multi-page PDF where one page is blank (e.g. a scanner artifact) should be skipped gracefully, not treated as a page full of unanswered content.
+Very poor scan quality (low resolution, heavy shadows) is a known limitation — the app should degrade to lower-confidence results rather than fail outright, and confidence should be visible to the teacher.
+This document pairs with the Technical Architecture Document and Product Requirements Document. Next: Frontend Specification Document and Feature Ticket List.
