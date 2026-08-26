@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { UploadCloud, FileText, CheckCircle2, X, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
+import { getDocumentPageCount } from '@/lib/pdfToImages';
 
 export interface UploadedFileData {
   file: File;
@@ -44,18 +45,15 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const validateAndProcessFile = (file: File) => {
-    // Reset error
+  const validateAndProcessFile = async (file: File) => {
     onErrorChange?.(null);
 
-    // Validate size
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       onErrorChange?.(`File is too large. Max limit is ${maxSizeMB}MB.`);
       return;
     }
 
-    // Validate type
     const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(file.type) && !file.name.match(/\.(pdf|png|jpg|jpeg)$/i)) {
       onErrorChange?.('Unsupported file type. Please upload a PDF or image (PNG/JPG).');
@@ -66,12 +64,17 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
       ? URL.createObjectURL(file)
       : undefined;
 
+    let pageCount = 1;
+    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+      pageCount = await getDocumentPageCount(file);
+    }
+
     onFileSelect({
       file,
       name: file.name,
       size: file.size,
-      type: file.type,
-      pageCount: file.type === 'application/pdf' ? undefined : 1,
+      type: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+      pageCount,
       previewUrl,
     });
   };
@@ -125,7 +128,6 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               : 'border-slate-border hover:border-primary/60 hover:bg-slate-50/70 shadow-sm'
           )}
         >
-          {/* Upload Icon Box */}
           <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-border group-hover:border-primary/40 flex items-center justify-center text-slate-400 group-hover:text-primary transition-all mb-4 shadow-sm group-hover:scale-105">
             <UploadCloud className="w-7 h-7" />
           </div>
@@ -147,18 +149,15 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           )}
         </div>
       ) : (
-        /* Attached / Valid file compact chip card */
         <div className="relative flex items-center justify-between p-5 rounded-2xl border border-slate-border bg-white shadow-sm hover:shadow transition-shadow">
           <div className="flex items-center gap-4 min-w-0">
-            {/* File Type Badge */}
             <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center text-status-error flex-shrink-0">
               <FileText className="w-5 h-5" />
               <span className="text-[9px] font-black uppercase tracking-wider">
-                {fileData.type.includes('pdf') ? 'PDF' : 'IMG'}
+                {fileData.type.includes('pdf') || fileData.name.endsWith('.pdf') ? 'PDF' : 'IMG'}
               </span>
             </div>
 
-            {/* File info */}
             <div className="min-w-0">
               <div className="text-sm font-semibold text-slate-text-primary truncate max-w-[200px] sm:max-w-[280px]">
                 {fileData.name}
@@ -170,7 +169,6 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             </div>
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center gap-2 pl-2">
             <div className="w-7 h-7 rounded-full bg-highlight-green-light text-status-success flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
