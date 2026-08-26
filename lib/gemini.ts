@@ -43,7 +43,7 @@ export async function generateStructured<T>(
     throw new GeminiError('GEMINI_API_KEY environment variable is not configured', 'AUTH_ERROR');
   }
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: modelName,
