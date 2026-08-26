@@ -1,6 +1,6 @@
 import React from 'react';
 import { Question, Grade, Mapping } from '@/lib/types';
-import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, Sparkles, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Badge } from '@/components/ui/Badge';
 
@@ -25,8 +25,8 @@ export const QuestionListItem: React.FC<QuestionListItemProps> = ({
 }) => {
   const isSubpart = Boolean(question.subpart);
 
-  // Status Badge Logic
-  const getStatusBadge = () => {
+  // Status Badge Logic matching v2.0 Design Tokens
+  const renderStatusBadge = () => {
     if (grade) {
       if (grade.correctness === 'correct') {
         return (
@@ -50,8 +50,8 @@ export const QuestionListItem: React.FC<QuestionListItemProps> = ({
         );
       }
       return (
-        <Badge variant="neutral" size="sm">
-          Ungraded
+        <Badge variant="error" size="sm">
+          0/{grade.maxScore}
         </Badge>
       );
     }
@@ -66,8 +66,9 @@ export const QuestionListItem: React.FC<QuestionListItemProps> = ({
       }
       if (mapping.status === 'out_of_order') {
         return (
-          <Badge variant="warning" size="sm">
-            Out of order
+          <Badge variant="warning" size="sm" className="gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            Out of Order
           </Badge>
         );
       }
@@ -118,7 +119,7 @@ export const QuestionListItem: React.FC<QuestionListItemProps> = ({
 
         {/* Status Badge & Expand Toggle */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {getStatusBadge()}
+          {renderStatusBadge()}
 
           <button
             onClick={(e) => {
