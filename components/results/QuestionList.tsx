@@ -1,21 +1,30 @@
 import React, { useState } from 'react';
-import { Question, Grade, Mapping } from '@/lib/types';
+import { Question, Grade, Mapping, UnmatchedAnswer, AnswerBlock } from '@/lib/types';
 import { QuestionListItem } from './QuestionListItem';
+import { UnmatchedAnswersPanel } from './UnmatchedAnswersPanel';
 
 export interface QuestionListProps {
   questions: Question[];
   selectedQuestionId: string | null;
+  selectedUnmatchedId?: string | null;
   onSelectQuestion: (question: Question) => void;
+  onSelectUnmatched?: (answerBlockId: string) => void;
   mappings?: Mapping[];
   grades?: Grade[];
+  unmatchedAnswers?: UnmatchedAnswer[];
+  answerBlocks?: AnswerBlock[];
 }
 
 export const QuestionList: React.FC<QuestionListProps> = ({
   questions,
   selectedQuestionId,
+  selectedUnmatchedId = null,
   onSelectQuestion,
+  onSelectUnmatched,
   mappings = [],
   grades = [],
+  unmatchedAnswers = [],
+  answerBlocks = [],
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -74,7 +83,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
         )}
       </div>
 
-      {/* Questions Scrollable List */}
+      {/* Questions Scrollable List & Unmatched Panel */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {questions.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-slate-text-secondary text-sm">
@@ -93,6 +102,18 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               onToggleExpand={() => toggleExpand(q.id)}
             />
           ))
+        )}
+
+        {/* Distinct Unmatched Answers Section */}
+        {unmatchedAnswers.length > 0 && onSelectUnmatched && (
+          <div className="pt-2">
+            <UnmatchedAnswersPanel
+              unmatchedAnswers={unmatchedAnswers}
+              answerBlocks={answerBlocks}
+              selectedUnmatchedId={selectedUnmatchedId}
+              onSelectUnmatched={onSelectUnmatched}
+            />
+          </div>
         )}
       </div>
     </div>

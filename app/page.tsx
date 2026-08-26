@@ -40,6 +40,7 @@ export default function Home() {
 
   // Selection & Navigation State
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const [selectedUnmatchedId, setSelectedUnmatchedId] = useState<string | null>(null);
   const [targetPage, setTargetPage] = useState<number | undefined>(undefined);
 
   const canStartMapping = Boolean(questionPaper && answerSheet && !qpError && !asError);
@@ -88,8 +89,8 @@ export default function Home() {
 
   const handleSelectQuestion = (q: Question) => {
     setSelectedQuestionId(q.id);
+    setSelectedUnmatchedId(null);
 
-    // Auto-scroll AnswerSheetViewer to first page containing the answer
     const mapping = mappingMap.get(q.id);
     if (mapping && mapping.answerBlockIds.length > 0) {
       for (const blockId of mapping.answerBlockIds) {
@@ -99,6 +100,16 @@ export default function Home() {
           break;
         }
       }
+    }
+  };
+
+  const handleSelectUnmatched = (blockId: string) => {
+    setSelectedUnmatchedId(blockId);
+    setSelectedQuestionId(null);
+
+    const block = answerBlockMap.get(blockId);
+    if (block && block.bbox.length > 0) {
+      setTargetPage(block.bbox[0].page);
     }
   };
 
@@ -221,7 +232,28 @@ export default function Home() {
   const renderOverlayForPage = (pageNumber: number) => {
     const overlays: React.ReactNode[] = [];
 
-    // 1. Render active highlights for the currently selected question
+    // 1. If an unmatched answer is selected
+    if (selectedUnmatchedId) {
+      const unmatchedBlock = answerBlockMap.get(selectedUnmatchedId);
+      if (unmatchedBlock) {
+        unmatchedBlock.bbox.forEach((box, bIdx) => {
+          if (box.page === pageNumber) {
+            overlays.push(
+              <HighlightOverlay
+                key={`unmatched-${unmatchedBlock.id}-${bIdx}`}
+                bbox={box}
+                label="Unmatched"
+                isUnmatched={true}
+                isActive={true}
+              />
+            );
+          }
+        });
+      }
+      return overlays;
+    }
+
+    // 2. Render active highlights for the currently selected question
     if (selectedQuestion) {
       selectedAnswerBlocks.forEach((block) => {
         block.bbox.forEach((box, bIdx) => {
@@ -239,7 +271,7 @@ export default function Home() {
         });
       });
     } else {
-      // 2. If no question is explicitly selected, render all answer blocks subtly
+      // 3. If no question is explicitly selected, render all answer blocks subtly
       answerBlocks.forEach((block) => {
         block.bbox.forEach((box, bIdx) => {
           if (box.page === pageNumber) {
@@ -250,7 +282,6 @@ export default function Home() {
                 label={block.detectedLabel ? `Q${block.detectedLabel}` : 'Ans'}
                 isActive={false}
                 onClick={() => {
-                  // Find question that maps to this block
                   const mapping = mappings.find((m) => m.answerBlockIds.includes(block.id));
                   if (mapping) {
                     const q = questionMap.get(mapping.questionId);
@@ -261,8 +292,8 @@ export default function Home() {
             );
           }
         });
-      }
-    )}
+      });
+    }
 
     return overlays;
   };
@@ -369,14 +400,18 @@ export default function Home() {
         {/* View State: Results Split Pane */}
         {viewState === 'results' && (
           <main className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-            {/* Left Panel: Question List (~400px wide) */}
+            {/* Left Panel: Question List (~410px wide) */}
             <div className="w-full md:w-[410px] h-full flex-shrink-0 flex flex-col border-r border-slate-border">
               <QuestionList
                 questions={questions}
                 selectedQuestionId={selectedQuestionId}
+                selectedUnmatchedId={selectedUnmatchedId}
                 onSelectQuestion={handleSelectQuestion}
+                onSelectUnmatched={handleSelectUnmatched}
                 mappings={mappings}
                 grades={grades}
+                unmatchedAnswers={unmatchedAnswers}
+                answerBlocks={answerBlocks}
               />
             </div>
 
