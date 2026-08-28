@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileText, CheckCircle2, X, AlertCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, X, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getDocumentPageCount } from '@/lib/pdfToImages';
 
@@ -120,38 +120,39 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={clsx(
-            'group relative flex flex-col items-center justify-center p-8 text-center rounded-2xl border-2 border-dashed transition-all cursor-pointer bg-white min-h-[220px]',
+            'group relative flex flex-col items-center justify-center p-8 text-center rounded-[24px] border-2 border-dashed transition-all cursor-pointer bg-white min-h-[220px]',
             error
-              ? 'border-status-error bg-red-50/20'
+              ? 'border-[#DC4C3E] bg-red-50/20'
               : isDragOver
-              ? 'border-primary bg-primary-light/30 shadow-md scale-[1.01]'
-              : 'border-slate-border hover:border-primary/60 hover:bg-slate-50/70 shadow-sm'
+              ? 'border-[#F4522D] bg-[#FEEAE6]/40 shadow-sm scale-[1.01]'
+              : 'border-[#CBD5E1] hover:border-[#F4522D]/70 hover:bg-[#F8FAFC] shadow-2xs'
           )}
         >
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-border group-hover:border-primary/40 flex items-center justify-center text-slate-400 group-hover:text-primary transition-all mb-4 shadow-sm group-hover:scale-105">
-            <UploadCloud className="w-7 h-7" />
+          {/* Upload icon in rounded square */}
+          <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] group-hover:border-[#F4522D]/40 flex items-center justify-center text-slate-700 group-hover:text-[#F4522D] transition-all mb-3.5 shadow-2xs">
+            <Upload className="w-6 h-6 stroke-[2.2]" />
           </div>
 
-          <div className="text-base font-semibold text-slate-text-primary">
+          <div className="text-[17px] font-bold text-[#0F172A] tracking-tight">
             {label}{' '}
-            <span className="text-primary font-bold">{typeHighlight}</span>
+            <span className="text-[#F4522D] font-bold">{typeHighlight}</span>
           </div>
 
-          <p className="text-xs text-slate-text-secondary mt-1.5 font-medium">
-            Drag & drop or <span className="text-primary underline">browse</span> (Max {maxSizeMB}MB)
+          <p className="text-xs text-[#94A3B8] mt-1 font-medium">
+            Max {maxSizeMB}MB
           </p>
 
           {error && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-status-error font-medium bg-red-50 px-3 py-1.5 rounded-lg border border-status-error/20">
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-[#DC4C3E] font-medium bg-red-50 px-3 py-1.5 rounded-xl border border-[#DC4C3E]/20">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
         </div>
       ) : (
-        <div className="relative flex items-center justify-between p-5 rounded-2xl border border-slate-border bg-white shadow-sm hover:shadow transition-shadow">
+        <div className="relative flex items-center justify-between p-6 rounded-[24px] border border-slate-200 bg-white shadow-2xs hover:shadow-sm transition-shadow min-h-[140px]">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center text-status-error flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex flex-col items-center justify-center text-[#DC4C3E] flex-shrink-0 shadow-2xs">
               <FileText className="w-5 h-5" />
               <span className="text-[9px] font-black uppercase tracking-wider">
                 {fileData.type.includes('pdf') || fileData.name.endsWith('.pdf') ? 'PDF' : 'IMG'}
@@ -159,10 +160,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             </div>
 
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-slate-text-primary truncate max-w-[200px] sm:max-w-[280px]">
+              <div className="text-[15px] font-bold text-[#0F172A] truncate max-w-[200px] sm:max-w-[280px]">
                 {fileData.name}
               </div>
-              <div className="text-xs text-slate-text-secondary mt-0.5 font-medium">
+              <div className="text-xs text-[#64748B] mt-0.5 font-medium">
                 {formatFileSize(fileData.size)}
                 {fileData.pageCount !== undefined && ` • ${fileData.pageCount} ${fileData.pageCount === 1 ? 'Page' : 'Pages'}`}
               </div>
@@ -170,7 +171,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           </div>
 
           <div className="flex items-center gap-2 pl-2">
-            <div className="w-7 h-7 rounded-full bg-highlight-green-light text-status-success flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-[#EAF5EC] text-[#3F9142] flex items-center justify-center shadow-2xs">
               <CheckCircle2 className="w-4 h-4" />
             </div>
 
@@ -180,7 +181,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                 onFileRemove();
                 if (inputRef.current) inputRef.current.value = '';
               }}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-status-error hover:bg-red-50 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-[#DC4C3E] hover:bg-red-50 transition-colors"
               title="Remove file"
             >
               <X className="w-4 h-4" />
@@ -191,3 +192,4 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     </div>
   );
 };
+

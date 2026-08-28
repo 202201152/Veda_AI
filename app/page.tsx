@@ -8,8 +8,7 @@ import { ProcessingStepper, PipelineStage } from '@/components/upload/Processing
 import { QuestionList } from '@/components/results/QuestionList';
 import { AnswerSheetViewer } from '@/components/results/AnswerSheetViewer';
 import { HighlightOverlay } from '@/components/results/HighlightOverlay';
-import { ArrowRight, Sparkles, AlertCircle, Layers, FileText, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { ArrowRight, Layers, AlertCircle } from 'lucide-react';
 import { rasterizeDocument, RasterizedPage } from '@/lib/pdfToImages';
 import { Question, AnswerBlock, Mapping, UnmatchedAnswer, Grade, OverallSummary } from '@/lib/types';
 import { clsx } from 'clsx';
@@ -302,11 +301,11 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-bg overflow-hidden">
-      {/* Sidebar - hidden on mobile screens, collapsible on desktop */}
+    <div className="flex h-screen w-full bg-[#EAEDF2] p-2.5 sm:p-3 md:p-3.5 gap-2.5 sm:gap-3.5 overflow-hidden select-none">
+      {/* Floating Left Sidebar - hidden on mobile screens, collapsible on desktop */}
       <div className={clsx(
-        'hidden md:block h-full',
-        isMobileSidebarOpen && '!block fixed inset-y-0 left-0 z-50 shadow-2xl md:static md:shadow-none'
+        'hidden md:block h-full flex-shrink-0',
+        isMobileSidebarOpen && '!block fixed inset-y-0 left-0 z-50 p-3 shadow-2xl md:static md:p-0 md:shadow-none'
       )}>
         <Sidebar
           isCollapsed={isSidebarCollapsed}
@@ -319,47 +318,57 @@ export default function Home() {
       {isMobileSidebarOpen && (
         <div
           onClick={() => setIsMobileSidebarOpen(false)}
-          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-xs"
         />
       )}
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      {/* Main Floating Workspace Card */}
+      <div className="flex-1 flex flex-col min-w-0 h-full bg-white rounded-[28px] border border-slate-200/80 shadow-sm overflow-hidden">
         <TopBar
           showBack={viewState !== 'upload'}
           onBack={handleBackToUpload}
           breadcrumbCurrent="Exams"
-          teacherName="Mrs. Sharma"
+          teacherName="Madhur Rastogi"
           onToggleMobileMenu={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
 
         {/* View State: Upload */}
         {viewState === 'upload' && (
-          <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 max-w-5xl mx-auto w-full overflow-y-auto">
-            <div className="relative mb-6">
-              <div className="w-20 h-20 rounded-full bg-primary-peach/20 p-1 ring-4 ring-primary-peach/30 flex items-center justify-center shadow-md">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-3xl shadow-inner">
-                  👩‍🏫
-                </div>
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 fill-white" />
-              </div>
-            </div>
-
-            <div className="text-center mb-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-text-primary tracking-tight flex flex-wrap items-center justify-center gap-2">
+          <main className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 sm:p-6 md:p-8 max-w-4xl mx-auto w-full overflow-y-auto pb-12 sm:pb-8">
+            {/* Centered Heading matching Desktop & Mobile Figma designs */}
+            <div className="text-center mb-2 sm:mb-4 mt-2 sm:mt-0">
+              {/* Desktop Headline */}
+              <h1 className="hidden sm:flex text-2xl sm:text-3xl md:text-[34px] font-extrabold text-[#0F172A] tracking-tight flex-wrap items-center justify-center gap-2">
                 <span>Upload</span>
-                <span className="inline-block px-3 py-1 bg-highlight-peach text-white rounded-full text-xl md:text-2xl font-bold shadow-sm">
+                <span className="inline-block px-4 py-1 bg-[#FEEAE6] text-[#F4522D] rounded-full text-xl sm:text-2xl md:text-[28px] font-extrabold shadow-2xs">
                   Question Paper &amp; Answer Sheets
                 </span>
               </h1>
-              <p className="text-sm text-slate-text-secondary mt-2 font-medium">
+
+              {/* Mobile Headline matching phone Figma screenshot */}
+              <h1 className="sm:hidden text-[22px] font-extrabold text-[#0F172A] tracking-tight leading-snug">
+                Upload <span className="underline decoration-slate-300 underline-offset-4">Question Paper</span><br />
+                &amp; Answer Sheets
+              </h1>
+
+              <p className="hidden sm:block text-[13.5px] text-[#64748B] mt-2 font-medium">
                 Upload both files to get started
               </p>
             </div>
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+            {/* Teacher Illustration Avatar matching Figma Frame 1618872259 */}
+            <div className="my-2 sm:my-3 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/teacher-avatar.png"
+                alt="Teacher Assistant"
+                className="w-32 h-32 sm:w-44 sm:h-44 object-contain select-none pointer-events-none"
+              />
+            </div>
+
+
+            {/* Upload Zone Cards */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 my-4 sm:my-5">
               <UploadZone
                 label="Upload"
                 typeHighlight="Question Paper"
@@ -383,20 +392,24 @@ export default function Home() {
               />
             </div>
 
-            <div className="flex flex-col items-center gap-3">
-              <Button
-                variant="charcoal"
-                size="lg"
+            {/* Start Mapping Pill Button & Helper */}
+            <div className="flex flex-col items-center gap-2.5 mt-2">
+              <button
                 disabled={!canStartMapping}
                 onClick={runPipeline}
-                rightIcon={<ArrowRight className="w-4 h-4 ml-2" />}
-                className="px-8 py-3 text-sm font-semibold rounded-full shadow-md"
+                className={clsx(
+                  'px-9 py-3 text-sm font-semibold rounded-full flex items-center gap-2 transition-all select-none',
+                  canStartMapping
+                    ? 'bg-[#333333] hover:bg-[#1E1E1E] text-white shadow-md hover:shadow cursor-pointer hover:scale-[1.01]'
+                    : 'bg-[#9CA3AF] text-white opacity-80 cursor-not-allowed shadow-none'
+                )}
               >
-                Start Mapping
-              </Button>
+                <span>Start Mapping</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
-              <p className="text-xs text-slate-text-secondary font-medium text-center">
-                Once both files are uploaded, you&apos;ll be able to map answers with questions.
+              <p className="text-xs text-[#94A3B8] font-medium text-center">
+                Once both files are uploaded, you&apos;ll be able to map answers with questions
               </p>
             </div>
           </main>
@@ -416,42 +429,40 @@ export default function Home() {
 
         {/* View State: Results */}
         {viewState === 'results' && (
-          <main className="flex-1 flex flex-col h-full overflow-hidden">
-            {/* Mobile Tab Switcher Bar (visible on mobile only) */}
-            <div className="md:hidden bg-white border-b border-slate-border px-4 py-2 flex items-center justify-center z-20">
-              <div className="bg-slate-100 p-1 rounded-full border border-slate-200 inline-flex items-center gap-1">
+          <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8FAFC]">
+            {/* Mobile Tab Switcher Bar (visible on mobile only) matching Figma */}
+            <div className="md:hidden bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-center z-20">
+              <div className="bg-[#F1F5F9] p-1 rounded-full border border-slate-200/80 inline-flex items-center gap-1">
                 <button
                   onClick={() => setMobileTab('questions')}
                   className={clsx(
-                    'px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5',
+                    'px-5 py-1.5 rounded-full text-xs font-bold transition-all',
                     mobileTab === 'questions'
-                      ? 'bg-charcoal text-white shadow-xs'
-                      : 'text-slate-text-secondary hover:text-slate-text-primary'
+                      ? 'bg-[#333333] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0F172A]'
                   )}
                 >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Questions ({questions.length})</span>
+                  Questions
                 </button>
                 <button
                   onClick={() => setMobileTab('answers')}
                   className={clsx(
-                    'px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5',
+                    'px-5 py-1.5 rounded-full text-xs font-bold transition-all',
                     mobileTab === 'answers'
-                      ? 'bg-charcoal text-white shadow-xs'
-                      : 'text-slate-text-secondary hover:text-slate-text-primary'
+                      ? 'bg-[#333333] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0F172A]'
                   )}
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Answer Sheet ({rasterizedPages.length})</span>
+                  Answer Sheet
                 </button>
               </div>
             </div>
 
             {/* Split View Container on Desktop / Tabbed View on Mobile */}
-            <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden p-2 sm:p-3 md:p-4 gap-3 md:gap-4">
               {/* Left: Question List */}
               <div className={clsx(
-                'w-full md:w-[420px] h-full flex-shrink-0 flex flex-col border-r border-slate-border overflow-hidden',
+                'w-full md:w-[420px] lg:w-[460px] h-full flex-shrink-0 flex flex-col overflow-hidden',
                 mobileTab === 'answers' ? 'hidden md:flex' : 'flex'
               )}>
                 <QuestionList
@@ -473,9 +484,9 @@ export default function Home() {
                 'flex-1 h-full flex flex-col min-w-0 relative overflow-hidden',
                 mobileTab === 'questions' ? 'hidden md:flex' : 'flex'
               )}>
-                {/* Multi-page banner indicator */}
+                {/* Multi-page banner indicator if spans pages */}
                 {selectedQuestionPages.length > 1 && (
-                  <div className="bg-primary-light/90 border-b border-primary/20 px-4 py-2 flex items-center justify-between text-xs text-primary font-semibold z-10 animate-fadeIn">
+                  <div className="bg-[#FEEAE6] border-b border-[#F4522D]/20 px-4 py-2 flex items-center justify-between text-xs text-[#F4522D] font-bold z-10 animate-fadeIn">
                     <div className="flex items-center gap-2">
                       <Layers className="w-4 h-4" />
                       <span>
@@ -487,9 +498,9 @@ export default function Home() {
                         <button
                           key={p}
                           onClick={() => setTargetPage(p)}
-                          className="px-2 py-0.5 rounded bg-white text-primary text-xs font-bold shadow-xs hover:bg-primary hover:text-white transition-colors"
+                          className="px-2 py-0.5 rounded-md bg-white text-[#F4522D] text-xs font-bold shadow-2xs hover:bg-[#F4522D] hover:text-white transition-colors"
                         >
-                          Go to Page {p}
+                          Page {p}
                         </button>
                       ))}
                     </div>
@@ -498,7 +509,7 @@ export default function Home() {
 
                 {/* Unanswered banner */}
                 {selectedQuestion && mappingMap.get(selectedQuestion.id)?.status === 'unanswered' && (
-                  <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2 text-xs text-status-error font-medium z-10 animate-fadeIn">
+                  <div className="bg-red-50 border-b border-red-200 px-4 py-2 flex items-center gap-2 text-xs text-[#DC4C3E] font-medium z-10 animate-fadeIn">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span>
                       Question {selectedQuestion.number} was identified as unanswered on the student&apos;s answer sheet.
@@ -519,3 +530,4 @@ export default function Home() {
     </div>
   );
 }
+

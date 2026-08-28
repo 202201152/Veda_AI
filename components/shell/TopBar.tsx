@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   ArrowLeft,
-  HelpCircle,
   Bell,
   Sparkles,
   ChevronDown,
@@ -24,9 +23,9 @@ export interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({
   onBack,
-  showBack = true,
+  showBack = false,
   breadcrumbCurrent = 'Exams',
-  teacherName = 'Mrs. Sharma',
+  teacherName = 'Madhur Rastogi',
   teacherAvatarUrl,
   unreadNotifications = true,
   onOpenHelp,
@@ -35,75 +34,74 @@ export const TopBar: React.FC<TopBarProps> = ({
   onToggleMobileMenu,
 }) => {
   return (
-    <header className="h-16 bg-white border-b border-slate-border px-4 sm:px-6 flex items-center justify-between select-none z-20 sticky top-0">
+    <header className="h-16 bg-white px-5 sm:px-8 flex items-center justify-between select-none z-20 flex-shrink-0">
       {/* Left controls */}
       <div className="flex items-center gap-3">
-        {/* Mobile menu trigger */}
+        {/* Desktop Back button */}
         <button
-          onClick={onToggleMobileMenu}
-          className="sm:hidden p-2 -ml-2 rounded-lg text-slate-text-secondary hover:text-slate-text-primary hover:bg-slate-100"
-          aria-label="Open menu"
+          onClick={onBack}
+          className="p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition-colors"
+          title="Go back"
+          aria-label="Back"
         >
-          <Menu className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
-        {showBack && (
-          <button
-            onClick={onBack}
-            className="p-2 rounded-lg text-slate-text-secondary hover:text-slate-text-primary hover:bg-slate-100 transition-colors"
-            title="Go back"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        )}
-
+        {/* Desktop Breadcrumb */}
         <div className="hidden sm:block">
           <Breadcrumb current={breadcrumbCurrent} />
         </div>
+
+        {/* Mobile VedaAI wordmark without collapse icon */}
+        <div className="sm:hidden flex items-center overflow-hidden w-[108px] h-7">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/Frame 1618872393.png"
+            alt="VedaAI"
+            className="h-full w-auto max-w-none object-left select-none"
+          />
+        </div>
+
       </div>
 
       {/* Right controls */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Help icon */}
+      <div className="flex items-center gap-2.5 sm:gap-4">
+        {/* Help icon - circular outline with ? */}
         <button
           onClick={onOpenHelp}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-slate-text-secondary hover:text-slate-text-primary hover:bg-slate-100 transition-colors"
-          title="Help & Documentation"
+          className="hidden sm:flex w-8 h-8 rounded-full border border-slate-300 items-center justify-center text-slate-700 hover:text-slate-900 hover:border-slate-400 hover:bg-slate-50 text-sm font-semibold transition-colors shadow-2xs"
+          title="Help"
           aria-label="Help"
         >
-          <HelpCircle className="w-5 h-5" />
+          ?
         </button>
 
-        {/* Notification Bell */}
+        {/* Notification Bell with red dot */}
         <button
           onClick={onOpenNotifications}
-          className="relative w-9 h-9 rounded-full flex items-center justify-center text-slate-text-secondary hover:text-slate-text-primary hover:bg-slate-100 transition-colors"
+          className="relative w-8 h-8 rounded-full flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors"
           title="Notifications"
           aria-label="Notifications"
         >
           <Bell className="w-5 h-5" />
           {unreadNotifications && (
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-status-error ring-2 ring-white" />
+            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[#F4522D] ring-2 ring-white" />
           )}
         </button>
 
         {/* AI Action Icon */}
         <button
           onClick={onOpenAiTools}
-          className="w-9 h-9 rounded-full bg-primary-light/60 flex items-center justify-center text-primary hover:bg-primary-light transition-colors"
+          className="hidden sm:flex w-8 h-8 rounded-full items-center justify-center text-slate-700 hover:text-[#F4522D] hover:bg-slate-100 transition-colors"
           title="AI Assistant"
           aria-label="AI Tools"
         >
-          <Sparkles className="w-4 h-4 fill-primary" />
+          <Sparkles className="w-5 h-5 fill-slate-700 hover:fill-[#F4522D] text-slate-700 hover:text-[#F4522D]" />
         </button>
 
-        {/* Divider */}
-        <div className="hidden sm:block h-6 w-px bg-slate-border mx-1" />
-
         {/* User Account / Profile */}
-        <div className="flex items-center gap-2 pl-1 cursor-pointer group">
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-light border border-primary/30 flex items-center justify-center text-primary font-bold text-sm shadow-sm flex-shrink-0">
+        <div className="flex items-center gap-2.5 cursor-pointer group">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center shadow-2xs flex-shrink-0">
             {teacherAvatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -112,15 +110,30 @@ export const TopBar: React.FC<TopBarProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-xs">👩‍🏫</span>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/images/teacher-avatar.png"
+                alt={teacherName}
+                className="w-full h-full object-cover"
+              />
             )}
           </div>
-          <span className="hidden md:inline text-sm font-semibold text-slate-text-primary group-hover:text-primary transition-colors">
+          <span className="hidden md:inline text-[13.5px] font-semibold text-[#0F172A] group-hover:text-[#F4522D] transition-colors">
             {teacherName}
           </span>
-          <ChevronDown className="w-4 h-4 text-slate-text-secondary group-hover:text-slate-text-primary transition-colors hidden sm:inline" />
+          <ChevronDown className="w-4 h-4 text-slate-500 group-hover:text-[#0F172A] transition-colors hidden sm:inline" />
         </div>
+
+        {/* Mobile Hamburger menu */}
+        <button
+          onClick={onToggleMobileMenu}
+          className="sm:hidden p-1.5 rounded-lg text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
       </div>
     </header>
   );
 };
+

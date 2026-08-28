@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Question, Grade, Mapping, UnmatchedAnswer, AnswerBlock, OverallSummary } from '@/lib/types';
 import { QuestionListItem } from './QuestionListItem';
 import { UnmatchedAnswersPanel } from './UnmatchedAnswersPanel';
-import { GradingSummaryPanel } from './GradingSummaryPanel';
 
 export interface QuestionListProps {
   questions: Question[];
@@ -25,7 +24,6 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   onSelectUnmatched,
   mappings = [],
   grades = [],
-  overallSummary = null,
   unmatchedAnswers = [],
   answerBlocks = [],
 }) => {
@@ -64,32 +62,19 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-slate-border">
-      {/* Optional Top Grading Summary Header */}
-      {overallSummary && (
-        <GradingSummaryPanel
-          overallSummary={overallSummary}
-          grades={grades}
-          mappings={mappings}
-          onExpandAllFeedback={handleToggleExpandAll}
-        />
-      )}
-
-      {/* Questions Section Header */}
-      <div className="p-4 sm:p-5 border-b border-slate-border flex items-center justify-between bg-white sticky top-0 z-10">
+    <div className="flex flex-col h-full bg-[#F8FAFC] overflow-hidden">
+      {/* Questions Section Header matching Figma */}
+      <div className="p-4 sm:px-6 sm:py-4 flex items-center justify-between bg-transparent sticky top-0 z-10 flex-shrink-0">
         <div>
-          <h2 className="text-sm sm:text-base font-bold text-slate-text-primary">
-            Extracted Questions
+          <h2 className="text-[15px] sm:text-[16px] font-bold text-[#0F172A] tracking-tight">
+            Extracted <span className="underline decoration-slate-300 underline-offset-4">Questions</span> <span className="font-normal text-slate-700">(from question paper)</span>
           </h2>
-          <span className="text-xs text-slate-text-secondary font-medium">
-            (from question paper • {questions.length} items)
-          </span>
         </div>
 
         {questions.length > 0 && (
           <button
             onClick={handleToggleExpandAll}
-            className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors px-2 py-1 rounded-md hover:bg-primary-light/50"
+            className="text-xs font-semibold text-[#0F172A] hover:text-[#F4522D] transition-colors px-3.5 py-1.5 rounded-full bg-white border border-slate-200 shadow-2xs hover:bg-slate-50"
           >
             {expandedIds.size === questions.length ? 'Collapse All' : 'Expand All'}
           </button>
@@ -97,9 +82,9 @@ export const QuestionList: React.FC<QuestionListProps> = ({
       </div>
 
       {/* Questions Scrollable List & Unmatched Panel */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 space-y-3">
         {questions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 text-center text-slate-text-secondary text-sm">
+          <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400 text-sm">
             <p>No questions extracted yet.</p>
           </div>
         ) : (
@@ -117,7 +102,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
           ))
         )}
 
-        {/* Distinct Unmatched Answers Section */}
+        {/* Distinct Unmatched Answers Section if present */}
         {unmatchedAnswers.length > 0 && onSelectUnmatched && (
           <div className="pt-2">
             <UnmatchedAnswersPanel
@@ -132,3 +117,4 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     </div>
   );
 };
+

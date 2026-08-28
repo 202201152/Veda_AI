@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 
 export interface HighlightOverlayProps {
   bbox: BBox;
-  label?: string; // e.g. "Q1", "Q2(a)"
+  label?: string; // e.g. "Q1", "Q2", "Q2(a)"
   isActive?: boolean;
   isUnmatched?: boolean;
   onClick?: () => void;
@@ -35,22 +35,22 @@ export const HighlightOverlay: React.FC<HighlightOverlayProps> = ({
         height,
       }}
       className={clsx(
-        'absolute rounded pointer-events-auto cursor-pointer transition-all duration-150 z-10',
+        'absolute rounded-xl pointer-events-auto cursor-pointer transition-all duration-150 z-10',
         isUnmatched
-          ? 'border-2 border-dashed border-status-error bg-red-500/15 shadow-sm ring-2 ring-red-400/20'
+          ? 'border-2 border-dashed border-[#DC4C3E] bg-[#DC4C3E]/15 shadow-sm'
           : isActive
-          ? 'border-2 border-highlight-green bg-highlight-green/15 shadow-sm ring-2 ring-highlight-green/20'
-          : 'border border-highlight-green/50 bg-highlight-green/5 hover:border-highlight-green hover:bg-highlight-green/15'
+          ? 'border-2 border-[#3F9142] bg-[#3F9142]/15 shadow-sm ring-1 ring-[#3F9142]/30'
+          : 'border border-[#3F9142]/60 bg-[#3F9142]/5 hover:border-[#3F9142] hover:bg-[#3F9142]/15'
       )}
       title={`${label} answer region`}
     >
-      {/* Pinned Tag at Top-Left Corner */}
+      {/* Pinned Green Badge at Top-Left Corner */}
       <div
         className={clsx(
-          'absolute -top-[2px] -left-[2px] text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded-tl rounded-br select-none shadow-xs flex items-center gap-1',
+          'absolute -top-3.5 left-2 text-[11px] font-bold px-2 py-0.5 rounded-t-md rounded-b-sm select-none shadow-2xs flex items-center gap-0.5',
           isUnmatched
-            ? 'bg-status-error text-white'
-            : 'bg-highlight-green text-white'
+            ? 'bg-[#DC4C3E] text-white'
+            : 'bg-[#3F9142] text-white'
         )}
       >
         <span>{label}</span>
@@ -58,3 +58,4 @@ export const HighlightOverlay: React.FC<HighlightOverlayProps> = ({
     </div>
   );
 };
+
