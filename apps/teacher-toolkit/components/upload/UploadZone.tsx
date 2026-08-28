@@ -120,7 +120,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={clsx(
-            'group relative flex flex-col items-center justify-center p-8 text-center rounded-[24px] border-2 border-dashed transition-all cursor-pointer bg-white min-h-[220px]',
+            'group relative flex flex-col items-center justify-center p-5 sm:p-7 text-center rounded-[24px] border-2 border-dashed transition-all cursor-pointer bg-white min-h-[190px] sm:min-h-[200px]',
             error
               ? 'border-[#DC4C3E] bg-red-50/20'
               : isDragOver
@@ -129,11 +129,11 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           )}
         >
           {/* Upload icon in rounded square */}
-          <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] group-hover:border-[#F4522D]/40 flex items-center justify-center text-slate-700 group-hover:text-[#F4522D] transition-all mb-3.5 shadow-2xs">
-            <Upload className="w-6 h-6 stroke-[2.2]" />
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] group-hover:border-[#F4522D]/40 flex items-center justify-center text-slate-700 group-hover:text-[#F4522D] transition-all mb-2.5 sm:mb-3 shadow-2xs">
+            <Upload className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
 
-          <div className="text-[17px] font-bold text-[#0F172A] tracking-tight">
+          <div className="text-[16px] sm:text-[17px] font-bold text-[#0F172A] tracking-tight">
             {label}{' '}
             <span className="text-[#F4522D] font-bold">{typeHighlight}</span>
           </div>

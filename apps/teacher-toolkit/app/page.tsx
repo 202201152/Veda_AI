@@ -334,13 +334,13 @@ export default function Home() {
 
         {/* View State: Upload */}
         {viewState === 'upload' && (
-          <main className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 sm:p-6 md:p-8 max-w-4xl mx-auto w-full overflow-y-auto pb-12 sm:pb-8">
+          <main className="flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-5 md:p-6 max-w-4xl mx-auto w-full overflow-y-auto no-scrollbar pb-6 sm:pb-6">
             {/* Centered Heading matching Desktop & Mobile Figma designs */}
-            <div className="text-center mb-2 sm:mb-4 mt-2 sm:mt-0">
+            <div className="text-center mb-1.5 sm:mb-3 mt-1 sm:mt-0">
               {/* Desktop Headline */}
-              <h1 className="hidden sm:flex text-2xl sm:text-3xl md:text-[34px] font-extrabold text-[#0F172A] tracking-tight flex-wrap items-center justify-center gap-2">
+              <h1 className="hidden sm:flex text-2xl sm:text-3xl md:text-[32px] font-extrabold text-[#0F172A] tracking-tight flex-wrap items-center justify-center gap-2">
                 <span>Upload</span>
-                <span className="inline-block px-4 py-1 bg-[#FEEAE6] text-[#F4522D] rounded-full text-xl sm:text-2xl md:text-[28px] font-extrabold shadow-2xs">
+                <span className="inline-block px-4 py-1 bg-[#FEEAE6] text-[#F4522D] rounded-full text-xl sm:text-2xl md:text-[26px] font-extrabold shadow-2xs">
                   Question Paper &amp; Answer Sheets
                 </span>
               </h1>
@@ -351,24 +351,24 @@ export default function Home() {
                 &amp; Answer Sheets
               </h1>
 
-              <p className="hidden sm:block text-[13.5px] text-[#64748B] mt-2 font-medium">
+              <p className="hidden sm:block text-[13px] text-[#64748B] mt-1.5 font-medium">
                 Upload both files to get started
               </p>
             </div>
 
             {/* Teacher Illustration Avatar matching Figma Frame 1618872259 */}
-            <div className="my-2 sm:my-3 flex items-center justify-center">
+            <div className="my-1.5 sm:my-2 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/teacher-avatar.png"
                 alt="Teacher Assistant"
-                className="w-32 h-32 sm:w-44 sm:h-44 object-contain select-none pointer-events-none"
+                className="w-28 h-28 sm:w-36 md:w-40 sm:h-36 md:h-40 object-contain select-none pointer-events-none"
               />
             </div>
 
 
             {/* Upload Zone Cards */}
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 my-4 sm:my-5">
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-5 my-3 sm:my-4">
               <UploadZone
                 label="Upload"
                 typeHighlight="Question Paper"
@@ -393,12 +393,12 @@ export default function Home() {
             </div>
 
             {/* Start Mapping Pill Button & Helper */}
-            <div className="flex flex-col items-center gap-2.5 mt-2">
+            <div className="flex flex-col items-center gap-2 mt-1 sm:mt-2">
               <button
                 disabled={!canStartMapping}
                 onClick={runPipeline}
                 className={clsx(
-                  'px-9 py-3 text-sm font-semibold rounded-full flex items-center gap-2 transition-all select-none',
+                  'px-9 py-2.5 sm:py-3 text-sm font-semibold rounded-full flex items-center gap-2 transition-all select-none',
                   canStartMapping
                     ? 'bg-[#333333] hover:bg-[#1E1E1E] text-white shadow-md hover:shadow cursor-pointer hover:scale-[1.01]'
                     : 'bg-[#9CA3AF] text-white opacity-80 cursor-not-allowed shadow-none'
@@ -417,7 +417,7 @@ export default function Home() {
 
         {/* View State: Processing */}
         {viewState === 'processing' && (
-          <main className="flex-1 flex items-center justify-center p-6 w-full overflow-y-auto">
+          <main className="flex-1 flex items-center justify-center p-6 w-full overflow-y-auto no-scrollbar">
             <ProcessingStepper
               currentStage={currentStage}
               error={processingError}
