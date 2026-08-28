@@ -1,24 +1,25 @@
 # Dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
 
+# Build outputs (Next.js, Turborepo, TypeScript)
+.next/
+out/
+build/
+dist/
+.turbo/
+
 # Testing
-/coverage
+coverage/
 
-# Next.js
-/.next/
-/out/
-
-# Production
-/build
-
-# Misc
+# OS / Misc
 .DS_Store
+Thumbs.db
 *.pem
 
-# Local env files
+# Local environment variables
 .env*.local
 .env
 

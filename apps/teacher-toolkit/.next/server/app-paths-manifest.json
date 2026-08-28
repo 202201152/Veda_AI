@@ -1,9 +1,0 @@
-{
-  "/_global-error/page": "app/_global-error/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/extract-answers/route": "app/api/extract-answers/route.js",
-  "/api/extract-questions/route": "app/api/extract-questions/route.js",
-  "/api/grade/route": "app/api/grade/route.js",
-  "/api/map-answers/route": "app/api/map-answers/route.js",
-  "/page": "app/page.js"
-}
