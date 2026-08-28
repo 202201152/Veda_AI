@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/extract-answers": {},
+    "/api/extract-questions": {},
+    "/api/grade": {},
+    "/api/map-answers": {}
+  }
+}

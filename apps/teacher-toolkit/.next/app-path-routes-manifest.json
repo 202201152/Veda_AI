@@ -1,0 +1,9 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/extract-answers/route": "/api/extract-answers",
+  "/api/extract-questions/route": "/api/extract-questions",
+  "/api/grade/route": "/api/grade",
+  "/api/map-answers/route": "/api/map-answers",
+  "/page": "/"
+}
