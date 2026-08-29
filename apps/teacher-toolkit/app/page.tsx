@@ -301,7 +301,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#EAEDF2] p-2.5 sm:p-3 md:p-3.5 gap-2.5 sm:gap-3.5 overflow-hidden select-none">
+    <div className="flex h-screen h-[100dvh] max-h-screen max-h-[100dvh] w-full bg-[#EAEDF2] p-2.5 sm:p-3 md:p-3.5 gap-2.5 sm:gap-3.5 overflow-hidden select-none">
       {/* Floating Left Sidebar - hidden on mobile screens, collapsible on desktop */}
       <div className={clsx(
         'hidden md:block h-full flex-shrink-0',
